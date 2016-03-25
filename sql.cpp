@@ -25,7 +25,7 @@ std::string InsertModel::str() {
     c_ss<<"insert into "<<_table_name<<"(";
     v_ss<<" values(";
     size_t size = _columns.size();
-    for(int i = 0; i < size; ++i) {
+    for(size_t i = 0; i < size; ++i) {
         if(i < size - 1) {
             c_ss<<_columns[i]<<", ";
             v_ss<<_values[i]<<", ";

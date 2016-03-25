@@ -107,7 +107,7 @@ public:
     template <typename... Args>
     SelectModel& select(Args&&... columns) {
         std::string a[] = {columns...};
-        int size = sizeof...(columns);
+        size_t size = sizeof...(columns);
         _select_columns.insert(_select_columns.end(), a, a + size);
         return *this;
     }
@@ -131,7 +131,7 @@ public:
     template <typename... Args>
     SelectModel& group_by(Args&&...columns) {
         std::string a[] = {columns...};
-        int size = sizeof...(columns);
+        size_t size = sizeof...(columns);
         _groupby_columns.insert(_groupby_columns.end(), a, a + size);
         return *this;
     }
@@ -354,7 +354,7 @@ public:
         size_t size = args.size();
         std::stringstream ss;
         ss<<_cond<<" in (";
-        for(int i = 0; i < size; ++i) {
+        for(size_t i = 0; i < size; ++i) {
             if(i < size - 1) {
                 ss<<args[i]<<", ";
             } else {
@@ -371,7 +371,7 @@ public:
         size_t size = args.size();
         std::stringstream ss;
         ss<<_cond<<" not in (";
-        for(int i = 0; i < size; ++i) {
+        for(size_t i = 0; i < size; ++i) {
             if(i < size - 1) {
                 ss<<args[i]<<", ";
             } else {

@@ -1,0 +1,23 @@
+cmake_minimum_required(VERSION 2.8)
+
+set(CMAKE_MACOSX_RPATH 0)
+
+project(sql-builder)
+
+set(DEBUG_FLAGS "-std=c++11 -g -O1 -Wall -Wextra -Werror -pedantic")
+set(RELEASE_FLAGS "-std=c++11 -O3 -Wall -Wextra -Werror -pedantic")
+
+set(CMAKE_CXX_FLAGS ${RELEASE_FLAGS})
+set(CMAKE_CXX_FLAGS_DEBUG ${DEBUG_FLAGS})
+set(CMAKE_CONFIGURATION_TYPES Debug Release)
+set(EXECUTABLE_OUTPUT_PATH ${CMAKE_CURRENT_BINARY_DIR})
+
+set(SQL_SRC sql.cpp)
+add_library(sql-builder SHARED ${SQL_SRC})
+
+set(SQL_TEST_SRC test.cpp)
+add_executable(sql-test ${SQL_TEST_SRC})
+target_link_libraries(sql-test sql-builder)
+add_test(all "sql-test")
+
+enable_testing()
