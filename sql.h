@@ -113,7 +113,11 @@ public:
     }
 
     SelectModel& from(const std::string& table_name) {
-        _table_name = table_name;
+        if(_table_name.empty()) {
+            _table_name = table_name;
+        } else {
+            _table_name = _table_name + ", " + table_name;
+        }
         return *this;
     }
 
@@ -291,7 +295,11 @@ public:
     }
 
     DeleteModel& from(const std::string& table_name) {
-        _table_name = table_name;
+        if(_table_name.empty()) {
+            _table_name = table_name;
+        } else {
+            _table_name = _table_name + ", " + table_name;
+        }
         return *this;
     }
 
@@ -324,6 +332,11 @@ class column
 public:
     column(const std::string& column) {
         _cond = column;
+    }
+
+    column& as(const std::string& s) {
+        _cond = _cond + " as " + s;
+        return *this;
     }
 
     column& is_null() {
