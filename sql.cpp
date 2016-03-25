@@ -1,15 +1,19 @@
 #include "sql.h"
-#include <iostream>
-#include <sstream>
 
 template <>
 std::string SqlHelper::to_string<std::string>(const std::string& data) {
-    return "'" + data + "'";
+    std::string str("'");
+    str.append(data);
+    str.append("'");
+    return str;
 }
 
 template <>
 std::string SqlHelper::to_string<const char*>(const char* const& data) {
-    return "'" + std::string(data) + "'";
+    std::string str("'");
+    str.append(data);
+    str.append("'");
+    return str;
 }
 
 template <>
@@ -17,83 +21,99 @@ std::string SqlHelper::to_string<time_t>(const time_t& data) {
     char buff[128] = {0};
     struct tm* ttime = localtime(&data);
     strftime(buff, sizeof(buff), "%Y-%m-%d %H:%M:%S", ttime);
-    return "'" + std::string(buff) + "'";
+    std::string str("'");
+    str.append(buff);
+    str.append("'");
+    return str;
 }
 
-std::string InsertModel::str() {
-    std::stringstream c_ss, v_ss;
-    c_ss<<"insert into "<<_table_name<<"(";
-    v_ss<<" values(";
+const std::string& InsertModel::str() {
+    _sql.clear();
+    std::string v_ss;
+    _sql.append("insert into ");
+    _sql.append(_table_name);
+    _sql.append("(");
+    v_ss.append(" values(");
     size_t size = _columns.size();
     for(size_t i = 0; i < size; ++i) {
         if(i < size - 1) {
-            c_ss<<_columns[i]<<", ";
-            v_ss<<_values[i]<<", ";
+            _sql.append(_columns[i]);
+            _sql.append(", ");
+            v_ss.append(_values[i]);
+            v_ss.append(", ");
         } else {
-            c_ss<<_columns[i]<<")";
-            v_ss<<_values[i]<<")";
+            _sql.append(_columns[i]);
+            _sql.append(")");
+            v_ss.append(_values[i]);
+            v_ss.append(")");
         }
     }
-    c_ss<<v_ss.str();
-    _sql = c_ss.str();
+    _sql.append(v_ss);
     return _sql;
 }
 
-std::string SelectModel::str() {
-    std::stringstream ss_w;
-    ss_w<<"select ";
+const std::string& SelectModel::str() {
+    _sql.clear();
+    _sql.append("select ");
     size_t size = _select_columns.size();
     for(size_t i = 0; i < size; ++i) {
         if(i < size - 1) {
-            ss_w<<_select_columns[i]<<", ";
+            _sql.append(_select_columns[i]);
+            _sql.append(", ");
         } else {
-            ss_w<<_select_columns[i];
+            _sql.append(_select_columns[i]);
         }
     }
-    ss_w<<" from "<<_table_name;
+    _sql.append(" from ");
+    _sql.append(_table_name);
     size = _where_condition.size();
     if(size > 0) {
-        ss_w<<" where ";
+        _sql.append(" where ");
         for(size_t i = 0; i < size; ++i) {
             if(i < size - 1) {
-                ss_w<<_where_condition[i]<<" ";
+                _sql.append(_where_condition[i]);
+                _sql.append(" ");
             } else {
-                ss_w<<_where_condition[i];
+                _sql.append(_where_condition[i]);
             }
         }
     }
     size = _groupby_columns.size();
     if(!_groupby_columns.empty()) {
-        ss_w<<" group by ";
+        _sql.append(" group by ");
         for(size_t i = 0; i < size; ++i) {
             if(i < size - 1) {
-                ss_w<<_groupby_columns[i]<<" ";
+                _sql.append(_groupby_columns[i]);
+                _sql.append(", ");
             } else {
-                ss_w<<_groupby_columns[i];
+                _sql.append(_groupby_columns[i]);
             }
         }
     }
     size = _having_condition.size();
     if(size > 0) {
-        ss_w<<" having ";
+        _sql.append(" having ");
         for(size_t i = 0; i < size; ++i) {
             if(i < size - 1) {
-                ss_w<<_having_condition[i]<<" ";
+                _sql.append(_having_condition[i]);
+                _sql.append(" ");
             } else {
-                ss_w<<_having_condition[i];
+                _sql.append(_having_condition[i]);
             }
         }
     }
     if(!_order_by.empty()) {
-        ss_w<<" order by "<<_order_by;
+        _sql.append(" order by ");
+        _sql.append(_order_by);
     }
     if(!_limit.empty()) {
-        ss_w<<" limit "<<_limit;
+        _sql.append(" limit ");
+        _sql.append(_limit);
     }
     if(!_offset.empty()) {
-        ss_w<<" offset "<<_offset;
+        _sql.append(" offset ");
+        _sql.append(_offset);
     }
-    _sql = ss_w.str();
     return _sql;
 }
 
@@ -112,29 +132,32 @@ UpdateModel& UpdateModel::where(column& condition) {
     return *this;
 }
 
-std::string UpdateModel::str() {
-    std::stringstream ss_w;
-    ss_w<<"update "<<_table_name<<" set ";
+const std::string& UpdateModel::str() {
+    _sql.clear();
+    _sql.append("update ");
+    _sql.append(_table_name);
+    _sql.append(" set ");
     size_t size = _set_columns.size();
     for(size_t i = 0; i < size; ++i) {
         if(i < size - 1) {
-            ss_w<<_set_columns[i]<<", ";
+            _sql.append(_set_columns[i]);
+            _sql.append(", ");
         } else {
-            ss_w<<_set_columns[i];
+            _sql.append(_set_columns[i]);
         }
     }
     size = _where_condition.size();
     if(size > 0) {
-        ss_w<<" where ";
+        _sql.append(" where ");
         for(size_t i = 0; i < size; ++i) {
             if(i < size - 1) {
-                ss_w<<_where_condition[i]<<" ";
+                _sql.append(_where_condition[i]);
+                _sql.append(" ");
             } else {
-                ss_w<<_where_condition[i];
+                _sql.append(_where_condition[i]);
             }
         }
     }
-    _sql = ss_w.str();
     return _sql;
 }
 
@@ -143,50 +166,65 @@ DeleteModel& DeleteModel::where(column& condition) {
     return *this;
 }
 
-std::string DeleteModel::str() {
-    std::stringstream ss_w;
-    ss_w<<"delete from "<<_table_name;
+const std::string& DeleteModel::str() {
+    _sql.clear();
+    _sql.append("delete from ");
+    _sql.append(_table_name);
     size_t size = _where_condition.size();
     if(size > 0) {
-        ss_w<<" where ";
+        _sql.append(" where ");
         for(size_t i = 0; i < size; ++i) {
             if(i < size - 1) {
-                ss_w<<_where_condition[i]<<" ";
+                _sql.append(_where_condition[i]);
+                _sql.append(" ");
             } else {
-                ss_w<<_where_condition[i];
+                _sql.append(_where_condition[i]);
             }
         }
     }
-    _sql = ss_w.str();
     return _sql;
 }
 
 column& column::operator &&(column& condition) {
-    condition._cond = "(" + _cond + ") and (" + condition._cond + ")";
+    std::string str("(");
+    str.append(_cond);
+    str.append(") and (");
+    str.append(condition._cond);
+    str.append(")");
+    condition._cond = str;
     return condition;
 }
 
 column& column::operator ||(column& condition) {
-    condition._cond = "(" + _cond + ") or (" + condition._cond + ")";
+    std::string str("(");
+    str.append(_cond);
+    str.append(") or (");
+    str.append(condition._cond);
+    str.append(")");
+    condition._cond = str;
     return condition;
 }
 
 column& column::operator &&(const std::string& condition) {
-    _cond = _cond + " and " + condition;
+    _cond.append(" and ");
+    _cond.append(condition);
     return *this;
 }
 
 column& column::operator ||(const std::string& condition) {
-    _cond = _cond + " or " + condition;
+    _cond.append(" or ");
+    _cond.append(condition);
     return *this;
 }
 
 column& column::operator &&(const char* condition) {
-    _cond = _cond + " and " + std::string(condition);
+    _cond.append(" and ");
+    _cond.append(condition);
     return *this;
 }
 
 column& column::operator ||(const char* condition) {
-    _cond = _cond + " or " + std::string(condition);
+    _cond.append(" or ");
+    _cond.append(condition);
     return *this;
 }
