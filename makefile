@@ -1,5 +1,5 @@
 all:
-	mkdir -p build && cd build && cmake .. && make 
+	mkdir -p build && cd build && cmake .. && make && ctest
 test:
 	cd build && ./sql-test
 clean:

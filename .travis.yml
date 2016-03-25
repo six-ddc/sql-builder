@@ -3,8 +3,18 @@ sudo: required
 dist: precise
 language: cpp
 
+os:
+  - linux
+  - osx
+
+osx_image: xcode7
+
+env:
+  - CONFIG=Release
+  - CONFIG=Debug
+
 matrix:
-  include:
+    include:
     - compiler: gcc
       addons:
         apt:
@@ -43,5 +53,6 @@ matrix:
 script:
   - mkdir build
   - cd build
-  - cmake -DCMAKE_CXX_COMPILER=$COMPILER .. && make && make test
+  - cmake -DCMAKE_CXX_COMPILER=$COMPILER .. && make
+  - ctest
   
