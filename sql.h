@@ -53,12 +53,16 @@ public:
             return *this;
         }
 
-        std::string str() const {
+        std::string value() const {
             if(*_value.begin() == '\'' && *_value.rbegin() == '\'') {
                 return std::string(_value.c_str() + 1, _value.size() - 2);
             } else {
                 return _value;
             }
+        }
+
+        bool empty() const {
+            return _value.empty();
         }
     private:
         const std::string& _str() const {
@@ -84,6 +88,9 @@ public:
 
     void dump(std::vector<std::string> &c, std::vector<std::string> &v) const {
         for(const auto& value : _values) {
+            if(value.second.empty()) {
+                continue;
+            }
             c.push_back(value.first);
             v.push_back(value.second._str());
         }
@@ -91,6 +98,9 @@ public:
 
     void dump(std::vector<std::string> &v) const {
         for(const auto& value : _values) {
+            if(value.second.empty()) {
+                continue;
+            }
             std::string str(value.first);
             str.append(" = ");
             str.append(value.second._str());
@@ -99,7 +109,6 @@ public:
     }
 
 private:
-    std::string _key;
     std::map<std::string, SqlValue> _values;
 };
 
@@ -273,6 +282,8 @@ public:
         return *this;
     }
 
+    UpdateModel& set(const column& col);
+
     UpdateModel& where(const std::string& condition) {
         _where_condition.push_back(condition);
         return *this;
@@ -410,6 +421,19 @@ public:
     column& operator ||(const std::string& condition);
     column& operator &&(const char* condition);
     column& operator ||(const char* condition);
+
+    column& operator ,(column& data) {
+        _cond.append(", ");
+        _cond.append(data.str());
+        return *this;
+    }
+
+    template <typename T>
+    column& operator =(const T& data) {
+        _cond.append(" = ");
+        _cond.append(SqlHelper::to_string(data));
+        return *this;
+    }
 
     template <typename T>
     column& operator ==(const T& data) {

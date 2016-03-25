@@ -132,6 +132,11 @@ UpdateModel& UpdateModel::where(column& condition) {
     return *this;
 }
 
+UpdateModel& UpdateModel::set(const column& col) {
+    _set_columns.push_back(col.str());
+    return *this;
+}
+
 const std::string& UpdateModel::str() {
     _sql.clear();
     _sql.append("update ");
