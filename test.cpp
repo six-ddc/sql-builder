@@ -30,11 +30,16 @@ int main()
     // insert into user(score, name, age, address, create_time) values(100, 'six', 20, 'beijing', '2016-03-25 10:15:59')
 
     SelectModel s;
-    s.select("id", "age", "name")
+    s.select("age")
         .from("user")
-        .where(column("score") > 60 and (column("age") >= 20 or column("address").is_not_null()));
+        .where(column("score") > 60 and (column("age") >= 20 or column("address").is_not_null()))
+        .group_by("age")
+        .having(column("age") > 10)
+        .order_by("age desc")
+        .limit(10)
+        .offset(1);
     std::cout<<s<<std::endl;
-    // select id, age, name from user where (score > 60) and ((age >= 20) or (address is not null))
+    // select age from user where (score > 60) and ((age >= 20) or (address is not null)) group by age having age > 10 order by age desc limit 10 offset 1
 
     std::vector<int> a = {1, 2, 3};
     UpdateModel u;

@@ -62,12 +62,48 @@ std::string SelectModel::str() {
             }
         }
     }
+    size = _groupby_columns.size();
+    if(!_groupby_columns.empty()) {
+        ss_w<<" group by ";
+        for(size_t i = 0; i < size; ++i) {
+            if(i < size - 1) {
+                ss_w<<_groupby_columns[i]<<" ";
+            } else {
+                ss_w<<_groupby_columns[i];
+            }
+        }
+    }
+    size = _having_condition.size();
+    if(size > 0) {
+        ss_w<<" having ";
+        for(size_t i = 0; i < size; ++i) {
+            if(i < size - 1) {
+                ss_w<<_having_condition[i]<<" ";
+            } else {
+                ss_w<<_having_condition[i];
+            }
+        }
+    }
+    if(!_order_by.empty()) {
+        ss_w<<" order by "<<_order_by;
+    }
+    if(!_limit.empty()) {
+        ss_w<<" limit "<<_limit;
+    }
+    if(!_offset.empty()) {
+        ss_w<<" offset "<<_offset;
+    }
     _sql = ss_w.str();
     return _sql;
 }
 
 SelectModel& SelectModel::where(column& condition) {
     _where_condition.push_back(condition.str());
+    return *this;
+}
+
+SelectModel& SelectModel::having(column& condition) {
+    _having_condition.push_back(condition.str());
     return *this;
 }
 
