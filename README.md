@@ -1,2 +1,2 @@
-# sql_builder
-c++ 实现的动态sql builder
+# sql-builder
+♥️ SQL query string builder for C++11
