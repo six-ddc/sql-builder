@@ -30,7 +30,7 @@ int main()
     // insert into user(score, name, age, address, create_time) values(100, 'six', 20, 'beijing', '2016-03-25 10:15:59')
 
     SelectModel s;
-    s.select("age")
+    s.select("id", "age", "name", "address")
         .from("user")
         .where(column("score") > 60 and (column("age") >= 20 or column("address").is_not_null()))
         .group_by("age")
@@ -39,7 +39,7 @@ int main()
         .limit(10)
         .offset(1);
     std::cout<<s<<std::endl;
-    // select age from user where (score > 60) and ((age >= 20) or (address is not null)) group by age having age > 10 order by age desc limit 10 offset 1
+    // select id, age, name, address from user where (score > 60) and ((age >= 20) or (address is not null)) group by age having age > 10 order by age desc limit 10 offset 1
 
     std::vector<int> a = {1, 2, 3};
     UpdateModel u;
@@ -60,19 +60,20 @@ int main()
     SqlModel m;
     m["address"] = "chengdu";
     m["score"] = 80;
+    m["age"] = 18;
     m["create_time"] = time(NULL);
 
     u.reset();
     u.update("user")
         .set(m);
     std::cout<<u<<std::endl;
-    // update user set address = 'chengdu', create_time = '2016-03-25 10:33:32', score = 80
+    // update user set address = 'chengdu', age = 18, create_time = '2016-03-25 23:06:25', score = 80
 
     i.reset();
     i.insert(m)
         .into("user");
     std::cout<<i<<std::endl;
-    // insert into user(address, create_time, score) values('chengdu', '2016-03-25 10:33:32', 80)
+    // insert into user(address, age, create_time, score) values('chengdu', 18, '2016-03-25 23:06:25', 80)
 
     return 0;
 }
