@@ -13,30 +13,24 @@ class SqlHelper
 {
 public:
     template <typename T>
-    static std::string to_string(const T& data, const std::string& op = "") {
+    static std::string to_string(const T& data) {
         return std::to_string(data);
     }
 
     template <size_t N>
-    static std::string to_string(char const(&data)[N], const std::string& op = "") {
-        if(op == "is") {
-            std::string a(data);
-            if(a == "null" || a == "NULL") {
-                return a;
-            }
-        }
+    static std::string to_string(char const(&data)[N]) {
         return "'" + std::string(data) + "'";
     }
 };
 
 template <>
-std::string SqlHelper::to_string<std::string>(const std::string& data, const std::string& op/* = ""*/);
+std::string SqlHelper::to_string<std::string>(const std::string& data);
 
 template <>
-std::string SqlHelper::to_string<const char*>(const char* const& data, const std::string& op/* = ""*/);
+std::string SqlHelper::to_string<const char*>(const char* const& data);
 
 template <>
-std::string SqlHelper::to_string<time_t>(const time_t& data, const std::string& op/* = ""*/);
+std::string SqlHelper::to_string<time_t>(const time_t& data);
 
 class SqlModel
 {
@@ -274,47 +268,6 @@ protected:
     std::string _sql;
 };
 
-/*
-template <typename... Args>
-std::string AND(Args&&... args) {
-    std::string a[] = {args...};
-    int size = sizeof...(args);
-    std::stringstream ss;
-    ss<<"(";
-    for(int i = 0; i < size; ++i) {
-        if(i < size - 1) {
-            ss<<a[i]<<" and ";
-        } else {
-            ss<<a[i];
-        }
-    }
-    ss<<")";
-    return ss.str();
-}
-
-template <typename... Args>
-std::string OR(Args&&... args) {
-    std::string a[] = {args...};
-    int size = sizeof...(args);
-    std::stringstream ss;
-    ss<<"(";
-    for(int i = 0; i < size; ++i) {
-        if(i < size - 1) {
-            ss<<a[i]<<" or ";
-        } else {
-            ss<<a[i];
-        }
-    }
-    ss<<")";
-    return ss.str();
-}
-
-template <typename T>
-static std::string MAKE_WHERE(const std::string& c, const std::string& op, const T& data) {
-    return c + " " + op + " " + SqlHelper::to_string(data, op);
-}
-*/
-
 class column
 {
 public:
@@ -327,6 +280,10 @@ public:
         return *this;
     }
 
+    column& is_not_null() {
+        _cond += " is not null";
+        return *this;
+    }
 
     template <typename T>
     column& in(const std::vector<T>& args) {

@@ -3,28 +3,17 @@
 #include <sstream>
 
 template <>
-std::string SqlHelper::to_string<std::string>(const std::string& data, const std::string& op/* = ""*/) {
-    if(op == "is") {
-        if(data == "null" || data == "NULL") {
-            return data;
-        }
-    }
+std::string SqlHelper::to_string<std::string>(const std::string& data) {
     return "'" + data + "'";
 }
 
 template <>
-std::string SqlHelper::to_string<const char*>(const char* const& data, const std::string& op/* = ""*/) {
-    if(op == "is") {
-        std::string a(data);
-        if(a == "null" || a == "NULL") {
-            return a;
-        }
-    }
+std::string SqlHelper::to_string<const char*>(const char* const& data) {
     return "'" + std::string(data) + "'";
 }
 
 template <>
-std::string SqlHelper::to_string<time_t>(const time_t& data, const std::string& op/* = ""*/) {
+std::string SqlHelper::to_string<time_t>(const time_t& data) {
     char buff[128] = {0};
     struct tm* ttime = localtime(&data);
     strftime(buff, sizeof(buff), "%Y-%m-%d %H:%M:%S", ttime);
