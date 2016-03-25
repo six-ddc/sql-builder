@@ -1,0 +1,4 @@
+test
+*.so
+test.dSYM
+.DS_Store
