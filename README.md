@@ -51,7 +51,7 @@
     m["address"] = "chengdu";
     m["score"] = 80;
     m["age"] = 18;
-    m["create_time"] = time(NULL);
+    m.insert(std::make_pair("create_time", time(NULL)));
 
     u.reset();
     u.update("user")

@@ -34,73 +34,55 @@ std::string SqlHelper::to_string<const char*>(const char* const& data);
 template <>
 std::string SqlHelper::to_string<time_t>(const time_t& data);
 
-class DataModel
+class SqlValue
 {
+    friend class DataModel;
 public:
-    class SqlValue
-    {
-        friend class DataModel;
-    public:
-        SqlValue() {}
+    SqlValue() {}
+    virtual ~SqlValue() {}
 
-        template <typename T>
-        SqlValue(const T& v) {
-            _value = SqlHelper::to_string(v);
-        }
-        template <typename T>
-        SqlValue& operator=(const T& v) {
-            _value = SqlHelper::to_string(v);
-            return *this;
-        }
-
-        std::string str() const {
-            if(*_value.begin() == '\'' && *_value.rbegin() == '\'') {
-                return std::string(_value.c_str() + 1, _value.size() - 2);
-            } else {
-                return _value;
-            }
-        }
-    private:
-        const std::string& _str() const {
-            return _value;
-        }
-        std::string _value;
-    };
-
-    SqlValue& operator [](const std::string& key) {
-        return _values[key];
+    template <typename T>
+    SqlValue(const T& v) {
+        _value = SqlHelper::to_string(v);
     }
 
     template <typename T>
-    DataModel& insert(const std::string& key, const T& value) {
-        _values.insert(std::make_pair(key, SqlValue(value)));
+    SqlValue& operator=(const T& v) {
+        _value = SqlHelper::to_string(v);
         return *this;
     }
 
-    DataModel& erase(const std::string& key) {
-        _values.erase(key);
-        return *this;
-    }
-
-    void format(std::vector<std::string> &c, std::vector<std::string> &v) const {
-        for(const auto& value : _values) {
-            c.push_back(value.first);
-            v.push_back(value.second._str());
-        }
-    }
-
-    void format(std::vector<std::string> &v) const {
-        for(const auto& value : _values) {
-            std::string str(value.first);
-            str.append(" = ");
-            str.append(value.second._str());
-            v.push_back(str);
+    std::string str() const {
+        if(*_value.begin() == '\'' && *_value.rbegin() == '\'') {
+            return std::string(_value.c_str() + 1, _value.size() - 2);
+        } else {
+            return _value;
         }
     }
 
 private:
-    std::string _key;
-    std::map<std::string, SqlValue> _values;
+    std::string _value;
+};
+
+class DataModel : public std::map<std::string, SqlValue>, public SqlHelper
+{
+public:
+    virtual ~DataModel() {}
+    void insert_format(std::vector<std::string> &c, std::vector<std::string> &v) const {
+        for(const auto& value : *this) {
+            c.push_back(value.first);
+            v.push_back(value.second._value);
+        }
+    }
+
+    void update_format(std::vector<std::string> &v) const {
+        for(const auto& value : *this) {
+            std::string str(value.first);
+            str.append(" = ");
+            str.append(value.second._value);
+            v.push_back(str);
+        }
+    }
 };
 
 class SqlModel 
@@ -231,7 +213,7 @@ public:
     }
 
     InsertModel& insert(const DataModel& mod) {
-        mod.format(_columns, _values);
+        mod.insert_format(_columns, _values);
         return *this;
     }
 
@@ -280,7 +262,7 @@ public:
     }
 
     UpdateModel& set(const DataModel& mod) {
-        mod.format(_set_columns);
+        mod.update_format(_set_columns);
         return *this;
     }
 
