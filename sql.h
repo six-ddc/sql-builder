@@ -34,12 +34,12 @@ std::string SqlHelper::to_string<const char*>(const char* const& data);
 template <>
 std::string SqlHelper::to_string<time_t>(const time_t& data);
 
-class SqlModel
+class DataModel
 {
 public:
     class SqlValue
     {
-        friend class SqlModel;
+        friend class DataModel;
     public:
         SqlValue() {}
 
@@ -53,16 +53,12 @@ public:
             return *this;
         }
 
-        std::string value() const {
+        std::string str() const {
             if(*_value.begin() == '\'' && *_value.rbegin() == '\'') {
                 return std::string(_value.c_str() + 1, _value.size() - 2);
             } else {
                 return _value;
             }
-        }
-
-        bool empty() const {
-            return _value.empty();
         }
     private:
         const std::string& _str() const {
@@ -76,31 +72,25 @@ public:
     }
 
     template <typename T>
-    SqlModel& insert(const std::string& key, const T& value) {
+    DataModel& insert(const std::string& key, const T& value) {
         _values.insert(std::make_pair(key, SqlValue(value)));
         return *this;
     }
 
-    SqlModel& erase(const std::string& key) {
+    DataModel& erase(const std::string& key) {
         _values.erase(key);
         return *this;
     }
 
-    void dump(std::vector<std::string> &c, std::vector<std::string> &v) const {
+    void format(std::vector<std::string> &c, std::vector<std::string> &v) const {
         for(const auto& value : _values) {
-            if(value.second.empty()) {
-                continue;
-            }
             c.push_back(value.first);
             v.push_back(value.second._str());
         }
     }
 
-    void dump(std::vector<std::string> &v) const {
+    void format(std::vector<std::string> &v) const {
         for(const auto& value : _values) {
-            if(value.second.empty()) {
-                continue;
-            }
             std::string str(value.first);
             str.append(" = ");
             str.append(value.second._str());
@@ -109,10 +99,28 @@ public:
     }
 
 private:
+    std::string _key;
     std::map<std::string, SqlValue> _values;
 };
 
-class SelectModel
+class SqlModel 
+{
+public:
+    SqlModel() {}
+    virtual ~SqlModel() {}
+
+    virtual const std::string& str() = 0;
+    const std::string& last_sql() {
+        return _sql;
+    }
+private:
+    SqlModel(const SqlModel& m) = delete;
+    SqlModel& operator =(const SqlModel& data) = delete;
+protected:
+    std::string _sql;
+};
+
+class SelectModel : public SqlModel
 {
 public:
     SelectModel() {}
@@ -180,10 +188,8 @@ public:
         return *this;
     }
 
-    const std::string& str();
-    const std::string& last_sql() {
-        return _sql;
-    }
+    virtual const std::string& str();
+
     SelectModel& reset() {
         _table_name.clear();
         _select_columns.clear();
@@ -209,10 +215,9 @@ protected:
     std::string _order_by;
     std::string _limit;
     std::string _offset;
-    std::string _sql;
 };
 
-class InsertModel
+class InsertModel : public SqlModel
 {
 public:
     InsertModel() {}
@@ -225,8 +230,8 @@ public:
         return *this;
     }
 
-    InsertModel& insert(const SqlModel& mod) {
-        mod.dump(_columns, _values);
+    InsertModel& insert(const DataModel& mod) {
+        mod.format(_columns, _values);
         return *this;
     }
 
@@ -234,10 +239,8 @@ public:
         _table_name = table_name;
     }
 
-    const std::string& str();
-    const std::string& last_sql() {
-        return _sql;
-    }
+    virtual const std::string& str();
+
     InsertModel& reset() {
         _table_name.clear();
         _columns.clear();
@@ -254,10 +257,9 @@ protected:
     std::string _table_name;
     std::vector<std::string> _columns;
     std::vector<std::string> _values;
-    std::string _sql;
 };
 
-class UpdateModel
+class UpdateModel : public SqlModel
 {
 public:
     UpdateModel() {}
@@ -277,12 +279,10 @@ public:
         return *this;
     }
 
-    UpdateModel& set(const SqlModel& mod) {
-        mod.dump(_set_columns);
+    UpdateModel& set(const DataModel& mod) {
+        mod.format(_set_columns);
         return *this;
     }
-
-    UpdateModel& set(const column& col);
 
     UpdateModel& where(const std::string& condition) {
         _where_condition.push_back(condition);
@@ -291,10 +291,8 @@ public:
 
     UpdateModel& where(column& condition); 
 
-    const std::string& str();
-    const std::string& last_sql() {
-        return _sql;
-    }
+    virtual const std::string& str();
+
     UpdateModel& reset() {
         _table_name.clear();
         _set_columns.clear();
@@ -310,10 +308,9 @@ protected:
     std::vector<std::string> _set_columns;
     std::string _table_name;
     std::vector<std::string> _where_condition;
-    std::string _sql;
 };
 
-class DeleteModel
+class DeleteModel : public SqlModel
 {
 public:
     DeleteModel() {}
@@ -340,10 +337,8 @@ public:
 
     DeleteModel& where(column& condition); 
 
-    const std::string& str();
-    const std::string& last_sql() {
-        return _sql;
-    }
+    virtual const std::string& str();
+
     DeleteModel& reset() {
         _table_name.clear();
         _where_condition.clear();
@@ -357,7 +352,6 @@ public:
 protected:
     std::string _table_name;
     std::vector<std::string> _where_condition;
-    std::string _sql;
 };
 
 class column
@@ -386,32 +380,42 @@ public:
     template <typename T>
     column& in(const std::vector<T>& args) {
         size_t size = args.size();
-        _cond.append(" in (");
-        for(size_t i = 0; i < size; ++i) {
-            if(i < size - 1) {
-                _cond.append(SqlHelper::to_string(args[i]));
-                _cond.append(", ");
-            } else {
-                _cond.append(SqlHelper::to_string(args[i]));
+        if(size == 1) {
+            _cond.append(" = ");
+            _cond.append(SqlHelper::to_string(args[0]));
+        } else {
+            _cond.append(" in (");
+            for(size_t i = 0; i < size; ++i) {
+                if(i < size - 1) {
+                    _cond.append(SqlHelper::to_string(args[i]));
+                    _cond.append(", ");
+                } else {
+                    _cond.append(SqlHelper::to_string(args[i]));
+                }
             }
+            _cond.append(")");
         }
-        _cond.append(")");
         return *this;
     }
 
     template <typename T>
     column& not_in(const std::vector<T>& args) {
         size_t size = args.size();
-        _cond.append(" not in (");
-        for(size_t i = 0; i < size; ++i) {
-            if(i < size - 1) {
-                _cond.append(SqlHelper::to_string(args[i]));
-                _cond.append(", ");
-            } else {
-                _cond.append(SqlHelper::to_string(args[i]));
+        if(size == 1) {
+            _cond.append(" != ");
+            _cond.append(SqlHelper::to_string(args[0]));
+        } else {
+            _cond.append(" not in (");
+            for(size_t i = 0; i < size; ++i) {
+                if(i < size - 1) {
+                    _cond.append(SqlHelper::to_string(args[i]));
+                    _cond.append(", ");
+                } else {
+                    _cond.append(SqlHelper::to_string(args[i]));
+                }
             }
+            _cond.append(")");
         }
-        _cond.append(")");
         return *this;
     }
 
@@ -421,19 +425,6 @@ public:
     column& operator ||(const std::string& condition);
     column& operator &&(const char* condition);
     column& operator ||(const char* condition);
-
-    column& operator ,(column& data) {
-        _cond.append(", ");
-        _cond.append(data.str());
-        return *this;
-    }
-
-    template <typename T>
-    column& operator =(const T& data) {
-        _cond.append(" = ");
-        _cond.append(SqlHelper::to_string(data));
-        return *this;
-    }
 
     template <typename T>
     column& operator ==(const T& data) {

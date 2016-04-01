@@ -34,7 +34,8 @@
     u.update("user")
         .set("name", "ddc")
         .set("age", 18)
-        .set((column("score") = 18, column("address") = "beijing"))
+        .set("score", 18)
+        .set("address", "beijing")
         .where(column("id").in(a));
     std::cout<<u<<std::endl;
     // update user set name = 'ddc', age = 18, score = 18, address = 'beijing' where id in (1, 2, 3)
@@ -42,11 +43,11 @@
     DeleteModel d;
     d._delete()
         .from("user")
-        .where(column("id") = 1);
+        .where(column("id") == 1);
     std::cout<<d<<std::endl;
     // delete from user where id = 1
 
-    SqlModel m;
+    DataModel m;
     m["address"] = "chengdu";
     m["score"] = 80;
     m["age"] = 18;
