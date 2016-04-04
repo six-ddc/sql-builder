@@ -83,6 +83,18 @@ public:
             v.push_back(str);
         }
     }
+
+    template <typename T, typename... Args>
+    DataModel& set(const std::string& k, const T& v, Args&&... more) {
+        (*this)[k] = SqlValue(v);
+        set(more...);
+        return *this;
+    }
+    
+    // for recursion
+    DataModel& set() {
+        return *this;
+    }
 };
 
 class SqlModel 
@@ -109,20 +121,31 @@ public:
     virtual ~SelectModel() {}
 
     template <typename... Args>
-    SelectModel& select(Args&&... columns) {
-        std::string a[] = {columns...};
-        size_t size = sizeof...(columns);
-        _select_columns.insert(_select_columns.end(), a, a + size);
+    SelectModel& select(const std::string& str, Args&&... columns) {
+        _select_columns.push_back(str);
+        select(columns...);
         return *this;
     }
 
-    SelectModel& from(const std::string& table_name) {
+    // for recursion
+    SelectModel& select() {
+        return *this;
+    }
+
+    template <typename... Args>
+    SelectModel& from(const std::string& table_name, Args&&... tables) {
         if(_table_name.empty()) {
             _table_name = table_name;
         } else {
             _table_name.append(", ");
             _table_name.append(table_name);
         }
+        from(tables...);
+        return *this;
+    }
+    
+    // for recursion
+    SelectModel& from() {
         return *this;
     }
 
@@ -134,10 +157,14 @@ public:
     SelectModel& where(column& condition); 
 
     template <typename... Args>
-    SelectModel& group_by(Args&&...columns) {
-        std::string a[] = {columns...};
-        size_t size = sizeof...(columns);
-        _groupby_columns.insert(_groupby_columns.end(), a, a + size);
+    SelectModel& group_by(const std::string& str, Args&&...columns) {
+        _groupby_columns.push_back(str);
+        group_by(columns...);
+        return *this;
+    }
+
+    // for recursion
+    SelectModel& group_by() {
         return *this;
     }
 
@@ -170,7 +197,7 @@ public:
         return *this;
     }
 
-    virtual const std::string& str();
+    virtual const std::string& str() override;
 
     SelectModel& reset() {
         _table_name.clear();
@@ -205,10 +232,16 @@ public:
     InsertModel() {}
     virtual ~InsertModel() {}
 
-    template <typename T>
-    InsertModel& insert(const std::string& c, const T& data) {
+    template <typename T, typename... Args>
+    InsertModel& insert(const std::string& c, const T& data, Args&&... more) {
         _columns.push_back(c);
         _values.push_back(SqlHelper::to_string(data));
+        insert(more...);
+        return *this;
+    }
+
+    // for recursion
+    InsertModel& insert() {
         return *this;
     }
 
@@ -221,7 +254,7 @@ public:
         _table_name = table_name;
     }
 
-    virtual const std::string& str();
+    virtual const std::string& str() override;
 
     InsertModel& reset() {
         _table_name.clear();
@@ -252,12 +285,18 @@ public:
         return *this;
     }
 
-    template <typename T>
-    UpdateModel& set(const std::string& c, const T& data) {
+    template <typename T, typename... Args>
+    UpdateModel& set(const std::string& c, const T& data, Args&&... more) {
         std::string str(c);
         str.append(" = ");
         str.append(SqlHelper::to_string(data));
         _set_columns.push_back(str);
+        set(more...);
+        return *this;
+    }
+
+    // for recursion
+    UpdateModel& set() {
         return *this;
     }
 
@@ -273,7 +312,7 @@ public:
 
     UpdateModel& where(column& condition); 
 
-    virtual const std::string& str();
+    virtual const std::string& str() override;
 
     UpdateModel& reset() {
         _table_name.clear();
@@ -302,13 +341,20 @@ public:
         return *this;
     }
 
-    DeleteModel& from(const std::string& table_name) {
+    template <typename... Args>
+    DeleteModel& from(const std::string& table_name, Args&&... tables) {
         if(_table_name.empty()) {
             _table_name = table_name;
         } else {
             _table_name.append(", ");
             _table_name.append(table_name);
         }
+        from(tables...);
+        return *this;
+    }
+    
+    // for recursion
+    DeleteModel& from() {
         return *this;
     }
 
@@ -319,7 +365,7 @@ public:
 
     DeleteModel& where(column& condition); 
 
-    virtual const std::string& str();
+    virtual const std::string& str() override;
 
     DeleteModel& reset() {
         _table_name.clear();
@@ -342,6 +388,7 @@ public:
     column(const std::string& column) {
         _cond = column;
     }
+    virtual ~column() {}
 
     column& as(const std::string& s) {
         _cond.append(" as ");

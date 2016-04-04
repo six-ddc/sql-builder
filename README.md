@@ -10,9 +10,9 @@
     InsertModel i;
     i.insert("score", 100)
         .insert("name", std::string("six"))
-        .insert("age", (unsigned char)20)
-        .insert("address", "beijing")
-        .insert("create_time", time(NULL))
+                "age", (unsigned char)20,
+                "address", "beijing",
+                "create_time", time(NULL))
         .into("user");
     std::cout<<i.str()<<std::endl;
     // insert into user(score, name, age, address, create_time) values(100, 'six', 20, 'beijing', '2016-03-25 10:15:59')
@@ -33,8 +33,8 @@
     UpdateModel u;
     u.update("user")
         .set("name", "ddc")
-        .set("age", 18)
-        .set("score", 18)
+        .set("age", 18,
+                "score", 18)
         .set("address", "beijing")
         .where(column("id").in(a));
     std::cout<<u<<std::endl;
@@ -49,19 +49,20 @@
 
     DataModel m;
     m["address"] = "chengdu";
-    m["score"] = 80;
     m["age"] = 18;
-    m.insert(std::make_pair("create_time", time(NULL)));
+    m.set("age", 20,
+            "score", 80,
+            "create_time", time(NULL));
 
     u.reset();
     u.update("user")
         .set(m);
     std::cout<<u<<std::endl;
-    // update user set address = 'chengdu', age = 18, create_time = '2016-03-25 23:06:25', score = 80
+    // update user set address = 'chengdu', age = 20, create_time = '2016-03-25 23:06:25', score = 80
 
     i.reset();
     i.insert(m)
         .into("user");
     std::cout<<i<<std::endl;
-    // insert into user(address, age, create_time, score) values('chengdu', 18, '2016-03-25 23:06:25', 80)
+    // insert into user(address, age, create_time, score) values('chengdu', 20, '2016-03-25 23:06:25', 80)
 ```
