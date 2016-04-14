@@ -3,7 +3,7 @@
 
 #include <vector>
 #include <string>
-#include <ctime>
+// #include <ctime>
 #include <map>
 
 class column;
@@ -31,8 +31,10 @@ std::string SqlHelper::to_string<std::string>(const std::string& data);
 template <>
 std::string SqlHelper::to_string<const char*>(const char* const& data);
 
+/*
 template <>
 std::string SqlHelper::to_string<time_t>(const time_t& data);
+*/
 
 class SqlValue
 {

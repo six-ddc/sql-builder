@@ -16,6 +16,7 @@ std::string SqlHelper::to_string<const char*>(const char* const& data) {
     return str;
 }
 
+/*
 template <>
 std::string SqlHelper::to_string<time_t>(const time_t& data) {
     char buff[128] = {0};
@@ -26,6 +27,7 @@ std::string SqlHelper::to_string<time_t>(const time_t& data) {
     str.append("'");
     return str;
 }
+*/
 
 const std::string& InsertModel::str() {
     _sql.clear();
