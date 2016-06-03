@@ -9,7 +9,7 @@ env:
     - CONFIG=Debug
 
 compiler:
-    - gcc
+    - g++
     - clang
 
 matrix:
