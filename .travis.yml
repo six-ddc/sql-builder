@@ -1,54 +1,28 @@
-# Use new trusty images, should yield newer compilers and packages
-sudo: required
-dist: precise
 language: cpp
 
 os:
-  - linux
-  - osx
-
-osx_image: xcode7
+    - linux
+    - osx
 
 env:
-  - CONFIG=Release
-  - CONFIG=Debug
+    - CONFIG=Release
+    - CONFIG=Debug
+
+compiler:
+    - gcc
+    - clang
 
 matrix:
     include:
-    - compiler: gcc
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - g++-4.9
-      env: COMPILER=g++-4.9
-    - compiler: gcc
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - g++-5
-      env: COMPILER=g++-5
-    - compiler: clang
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-            - llvm-toolchain-precise-3.6
-          packages:
-            - clang-3.6
-      env: COMPILER=clang++-3.6
-    - compiler: clang
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-            - llvm-toolchain-precise-3.7
-          packages:
-            - clang-3.7
-      env: COMPILER=clang++-3.7
+        - os: linux
+          dist: trusty
+          sudo: required
+        - os: osx
+          osx_image: xcode7.2
+
+before install:
+    - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update       ; fi
+    - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install cmake; fi
 
 script:
-  - make all
+    - make all
