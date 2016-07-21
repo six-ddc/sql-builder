@@ -17,14 +17,16 @@ create table if not exists user (
 
 */
 
+using namespace sql;
+
 int main() 
 {
     InsertModel i;
     i.insert("score", 100)
-        .insert("name", std::string("six"),
-                "age", (unsigned char)20,
-                "address", "beijing",
-                "create_time", time(NULL))
+        ("name", std::string("six"))
+        ("age", (unsigned char)20)
+        ("address", "beijing")
+        ("create_time", nullptr)
         .into("user");
     std::cout<<i.str()<<std::endl;
     // insert into user(score, name, age, address, create_time) values(100, 'six', 20, 'beijing', '2016-03-25 10:15:59')
@@ -45,9 +47,9 @@ int main()
     UpdateModel u;
     u.update("user")
         .set("name", "ddc")
-        .set("age", 18,
-                "score", 18)
-        .set("address", "beijing")
+        ("age", 18)
+        ("score", nullptr)
+        ("address", "beijing")
         .where(column("id").in(a));
     std::cout<<u<<std::endl;
     // update user set name = 'ddc', age = 18, score = 18, address = 'beijing' where id in (1, 2, 3)
