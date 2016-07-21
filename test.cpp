@@ -61,24 +61,5 @@ int main()
     std::cout<<d<<std::endl;
     // delete from user where id = 1
 
-    DataModel m;
-    m["address"] = "chengdu";
-    m["age"] = 18;
-    m.set("age", 20,
-            "score", 80,
-            "create_time", time(NULL));
-
-    u.reset();
-    u.update("user")
-        .set(m);
-    std::cout<<u<<std::endl;
-    // update user set address = 'chengdu', age = 20, create_time = '2016-03-25 23:06:25', score = 80
-
-    i.reset();
-    i.insert(m)
-        .into("user");
-    std::cout<<i<<std::endl;
-    // insert into user(address, age, create_time, score) values('chengdu', 20, '2016-03-25 23:06:25', 80)
-
     return 0;
 }
