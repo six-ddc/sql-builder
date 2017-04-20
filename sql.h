@@ -435,10 +435,21 @@ public:
         return *this;
     }
 
+    InsertModel& replace(bool var){
+        _replace = var;
+        return *this;
+    }
+
     virtual const std::string& str() override{
         _sql.clear();
         std::string v_ss;
-        _sql.append("insert into ");
+
+        if (_replace){
+            _sql.append("insert or replace into ");
+        }else{
+            _sql.append("insert into ");
+        }
+
         _sql.append(_table_name);
         _sql.append("(");
         v_ss.append(" values(");
@@ -473,6 +484,7 @@ public:
     }
 
 protected:
+    bool _replace = false;
     std::string _table_name;
     std::vector<std::string> _columns;
     std::vector<std::string> _values;
