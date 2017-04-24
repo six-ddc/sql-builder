@@ -1,6 +1,6 @@
 all:
-	mkdir -p build && cd build && cmake .. && make && ctest
+	cd test && mkdir -p build && cd build && cmake .. && make && ctest
 test: all
-	cd build && ./sql-test
+	cd test/build && ./sql-test
 clean:
-	rm -rf build
+	rm -rf test/build

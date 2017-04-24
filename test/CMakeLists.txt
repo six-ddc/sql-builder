@@ -12,6 +12,8 @@ set(CMAKE_CXX_FLAGS_DEBUG ${DEBUG_FLAGS})
 set(CMAKE_CONFIGURATION_TYPES Debug Release)
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_CURRENT_BINARY_DIR})
 
+include_directories(sql-test "../")
+
 set(SQL_TEST_SRC test.cpp)
 add_executable(sql-test ${SQL_TEST_SRC})
 
