@@ -1,5 +1,4 @@
-#ifndef _SQL_H_
-#define _SQL_H_
+#pragma once
 
 #include <vector>
 #include <string>
@@ -8,12 +7,12 @@
 namespace sql {
 
 template <typename T>
-std::string to_value(const T& data) {
+inline std::string to_value(const T& data) {
     return std::to_string(data);
 }
 
 template <size_t N>
-std::string to_value(char const(&data)[N]) {
+inline std::string to_value(char const(&data)[N]) {
     std::string str("'");
     str.append(data);
     str.append("'");
@@ -21,7 +20,7 @@ std::string to_value(char const(&data)[N]) {
 }
 
 template <>
-std::string to_value<std::string>(const std::string& data) {
+inline std::string to_value<std::string>(const std::string& data) {
     std::string str("'");
     str.append(data);
     str.append("'");
@@ -29,7 +28,7 @@ std::string to_value<std::string>(const std::string& data) {
 }
 
 template <>
-std::string to_value<const char*>(const char* const& data) {
+inline std::string to_value<const char*>(const char* const& data) {
     std::string str("'");
     str.append(data);
     str.append("'");
@@ -270,7 +269,10 @@ public:
         return *this;
     }
 
-    SelectModel& where(column& condition); 
+    SelectModel& where(column& condition) {
+        _where_condition.push_back(condition.str());
+        return *this;
+    }
 
     template <typename... Args>
     SelectModel& group_by(const std::string& str, Args&&...columns) {
@@ -289,7 +291,10 @@ public:
         return *this;
     }
 
-    SelectModel& having(column& condition); 
+    SelectModel& having(column& condition){
+        _having_condition.push_back(condition.str());
+        return *this;
+    }
 
     SelectModel& order_by(const std::string& order_by) {
         _order_by = order_by;
@@ -313,7 +318,70 @@ public:
         return *this;
     }
 
-    virtual const std::string& str() override;
+    virtual const std::string& str() override{
+        _sql.clear();
+        _sql.append("select ");
+        size_t size = _select_columns.size();
+        for(size_t i = 0; i < size; ++i) {
+            if(i < size - 1) {
+                _sql.append(_select_columns[i]);
+                _sql.append(", ");
+            } else {
+                _sql.append(_select_columns[i]);
+            }
+        }
+        _sql.append(" from ");
+        _sql.append(_table_name);
+        size = _where_condition.size();
+        if(size > 0) {
+            _sql.append(" where ");
+            for(size_t i = 0; i < size; ++i) {
+                if(i < size - 1) {
+                    _sql.append(_where_condition[i]);
+                    _sql.append(" ");
+                } else {
+                    _sql.append(_where_condition[i]);
+                }
+            }
+        }
+        size = _groupby_columns.size();
+        if(!_groupby_columns.empty()) {
+            _sql.append(" group by ");
+            for(size_t i = 0; i < size; ++i) {
+                if(i < size - 1) {
+                    _sql.append(_groupby_columns[i]);
+                    _sql.append(", ");
+                } else {
+                    _sql.append(_groupby_columns[i]);
+                }
+            }
+        }
+        size = _having_condition.size();
+        if(size > 0) {
+            _sql.append(" having ");
+            for(size_t i = 0; i < size; ++i) {
+                if(i < size - 1) {
+                    _sql.append(_having_condition[i]);
+                    _sql.append(" ");
+                } else {
+                    _sql.append(_having_condition[i]);
+                }
+            }
+        }
+        if(!_order_by.empty()) {
+            _sql.append(" order by ");
+            _sql.append(_order_by);
+        }
+        if(!_limit.empty()) {
+            _sql.append(" limit ");
+            _sql.append(_limit);
+        }
+        if(!_offset.empty()) {
+            _sql.append(" offset ");
+            _sql.append(_offset);
+        }
+        return _sql;
+    }
 
     SelectModel& reset() {
         _table_name.clear();
@@ -342,80 +410,7 @@ protected:
     std::string _offset;
 };
 
-const std::string& SelectModel::str() {
-    _sql.clear();
-    _sql.append("select ");
-    size_t size = _select_columns.size();
-    for(size_t i = 0; i < size; ++i) {
-        if(i < size - 1) {
-            _sql.append(_select_columns[i]);
-            _sql.append(", ");
-        } else {
-            _sql.append(_select_columns[i]);
-        }
-    }
-    _sql.append(" from ");
-    _sql.append(_table_name);
-    size = _where_condition.size();
-    if(size > 0) {
-        _sql.append(" where ");
-        for(size_t i = 0; i < size; ++i) {
-            if(i < size - 1) {
-                _sql.append(_where_condition[i]);
-                _sql.append(" ");
-            } else {
-                _sql.append(_where_condition[i]);
-            }
-        }
-    }
-    size = _groupby_columns.size();
-    if(!_groupby_columns.empty()) {
-        _sql.append(" group by ");
-        for(size_t i = 0; i < size; ++i) {
-            if(i < size - 1) {
-                _sql.append(_groupby_columns[i]);
-                _sql.append(", ");
-            } else {
-                _sql.append(_groupby_columns[i]);
-            }
-        }
-    }
-    size = _having_condition.size();
-    if(size > 0) {
-        _sql.append(" having ");
-        for(size_t i = 0; i < size; ++i) {
-            if(i < size - 1) {
-                _sql.append(_having_condition[i]);
-                _sql.append(" ");
-            } else {
-                _sql.append(_having_condition[i]);
-            }
-        }
-    }
-    if(!_order_by.empty()) {
-        _sql.append(" order by ");
-        _sql.append(_order_by);
-    }
-    if(!_limit.empty()) {
-        _sql.append(" limit ");
-        _sql.append(_limit);
-    }
-    if(!_offset.empty()) {
-        _sql.append(" offset ");
-        _sql.append(_offset);
-    }
-    return _sql;
-}
 
-SelectModel& SelectModel::where(column& condition) {
-    _where_condition.push_back(condition.str());
-    return *this;
-}
-
-SelectModel& SelectModel::having(column& condition) {
-    _having_condition.push_back(condition.str());
-    return *this;
-}
 
 class InsertModel : public SqlModel
 {
@@ -435,11 +430,46 @@ public:
         return insert(c, data);
     }
 
-    inline void into(const std::string& table_name) {
+    InsertModel& into(const std::string& table_name) {
         _table_name = table_name;
+        return *this;
     }
 
-    virtual const std::string& str() override;
+    InsertModel& replace(bool var){
+        _replace = var;
+        return *this;
+    }
+
+    virtual const std::string& str() override{
+        _sql.clear();
+        std::string v_ss;
+
+        if (_replace){
+            _sql.append("insert or replace into ");
+        }else{
+            _sql.append("insert into ");
+        }
+
+        _sql.append(_table_name);
+        _sql.append("(");
+        v_ss.append(" values(");
+        size_t size = _columns.size();
+        for(size_t i = 0; i < size; ++i) {
+            if(i < size - 1) {
+                _sql.append(_columns[i]);
+                _sql.append(", ");
+                v_ss.append(_values[i]);
+                v_ss.append(", ");
+            } else {
+                _sql.append(_columns[i]);
+                _sql.append(")");
+                v_ss.append(_values[i]);
+                v_ss.append(")");
+            }
+        }
+        _sql.append(v_ss);
+        return _sql;
+    }
 
     InsertModel& reset() {
         _table_name.clear();
@@ -454,41 +484,17 @@ public:
     }
 
 protected:
+    bool _replace = false;
     std::string _table_name;
     std::vector<std::string> _columns;
     std::vector<std::string> _values;
 };
 
 template <>
-InsertModel& InsertModel::insert(const std::string& c, const std::nullptr_t&) {
+inline InsertModel& InsertModel::insert(const std::string& c, const std::nullptr_t&) {
     _columns.push_back(c);
     _values.push_back("null");
     return *this;
-}
-
-const std::string& InsertModel::str() {
-    _sql.clear();
-    std::string v_ss;
-    _sql.append("insert into ");
-    _sql.append(_table_name);
-    _sql.append("(");
-    v_ss.append(" values(");
-    size_t size = _columns.size();
-    for(size_t i = 0; i < size; ++i) {
-        if(i < size - 1) {
-            _sql.append(_columns[i]);
-            _sql.append(", ");
-            v_ss.append(_values[i]);
-            v_ss.append(", ");
-        } else {
-            _sql.append(_columns[i]);
-            _sql.append(")");
-            v_ss.append(_values[i]);
-            v_ss.append(")");
-        }
-    }
-    _sql.append(v_ss);
-    return _sql;
 }
 
 
@@ -522,9 +528,39 @@ public:
         return *this;
     }
 
-    UpdateModel& where(column& condition); 
+    UpdateModel& where(column& condition){
+        _where_condition.push_back(condition.str());
+        return *this;
+    }
 
-    virtual const std::string& str() override;
+    virtual const std::string& str() override{
+        _sql.clear();
+        _sql.append("update ");
+        _sql.append(_table_name);
+        _sql.append(" set ");
+        size_t size = _set_columns.size();
+        for(size_t i = 0; i < size; ++i) {
+            if(i < size - 1) {
+                _sql.append(_set_columns[i]);
+                _sql.append(", ");
+            } else {
+                _sql.append(_set_columns[i]);
+            }
+        }
+        size = _where_condition.size();
+        if(size > 0) {
+            _sql.append(" where ");
+            for(size_t i = 0; i < size; ++i) {
+                if(i < size - 1) {
+                    _sql.append(_where_condition[i]);
+                    _sql.append(" ");
+                } else {
+                    _sql.append(_where_condition[i]);
+                }
+            }
+        }
+        return _sql;
+    }
 
     UpdateModel& reset() {
         _table_name.clear();
@@ -544,46 +580,13 @@ protected:
 };
 
 template <>
-UpdateModel& UpdateModel::set(const std::string& c, const std::nullptr_t&) {
+inline UpdateModel& UpdateModel::set(const std::string& c, const std::nullptr_t&) {
     std::string str(c);
     str.append(" = null");
     _set_columns.push_back(str);
     return *this;
 }
 
-UpdateModel& UpdateModel::where(column& condition) {
-    _where_condition.push_back(condition.str());
-    return *this;
-}
-
-const std::string& UpdateModel::str() {
-    _sql.clear();
-    _sql.append("update ");
-    _sql.append(_table_name);
-    _sql.append(" set ");
-    size_t size = _set_columns.size();
-    for(size_t i = 0; i < size; ++i) {
-        if(i < size - 1) {
-            _sql.append(_set_columns[i]);
-            _sql.append(", ");
-        } else {
-            _sql.append(_set_columns[i]);
-        }
-    }
-    size = _where_condition.size();
-    if(size > 0) {
-        _sql.append(" where ");
-        for(size_t i = 0; i < size; ++i) {
-            if(i < size - 1) {
-                _sql.append(_where_condition[i]);
-                _sql.append(" ");
-            } else {
-                _sql.append(_where_condition[i]);
-            }
-        }
-    }
-    return _sql;
-}
 
 class DeleteModel : public SqlModel
 {
@@ -617,9 +620,29 @@ public:
         return *this;
     }
 
-    DeleteModel& where(column& condition); 
+    DeleteModel& where(column& condition){
+        _where_condition.push_back(condition.str());
+        return *this;
+    }
 
-    virtual const std::string& str() override;
+    virtual const std::string& str() override{
+        _sql.clear();
+        _sql.append("delete from ");
+        _sql.append(_table_name);
+        size_t size = _where_condition.size();
+        if(size > 0) {
+            _sql.append(" where ");
+            for(size_t i = 0; i < size; ++i) {
+                if(i < size - 1) {
+                    _sql.append(_where_condition[i]);
+                    _sql.append(" ");
+                } else {
+                    _sql.append(_where_condition[i]);
+                }
+            }
+        }
+        return _sql;
+    }
 
     DeleteModel& reset() {
         _table_name.clear();
@@ -636,30 +659,4 @@ protected:
     std::vector<std::string> _where_condition;
 };
 
-DeleteModel& DeleteModel::where(column& condition) {
-    _where_condition.push_back(condition.str());
-    return *this;
 }
-
-const std::string& DeleteModel::str() {
-    _sql.clear();
-    _sql.append("delete from ");
-    _sql.append(_table_name);
-    size_t size = _where_condition.size();
-    if(size > 0) {
-        _sql.append(" where ");
-        for(size_t i = 0; i < size; ++i) {
-            if(i < size - 1) {
-                _sql.append(_where_condition[i]);
-                _sql.append(" ");
-            } else {
-                _sql.append(_where_condition[i]);
-            }
-        }
-    }
-    return _sql;
-}
-
-}
-
-#endif
