@@ -159,46 +159,46 @@ public:
     }
 
     template <typename T>
-        column& operator ==(const T& data) {
-            _cond.append(" = ");
-            _cond.append(to_value(data));
-            return *this;
-        }
+    column& operator ==(const T& data) {
+        _cond.append(" = ");
+        _cond.append(to_value(data));
+        return *this;
+    }
 
     template <typename T>
-        column& operator !=(const T& data) {
-            _cond.append(" != ");
-            _cond.append(to_value(data));
-            return *this;
-        }
+    column& operator !=(const T& data) {
+        _cond.append(" != ");
+        _cond.append(to_value(data));
+        return *this;
+    }
 
     template <typename T>
-        column& operator >=(const T& data) {
-            _cond.append(" >= ");
-            _cond.append(to_value(data));
-            return *this;
-        }
+    column& operator >=(const T& data) {
+        _cond.append(" >= ");
+        _cond.append(to_value(data));
+        return *this;
+    }
 
     template <typename T>
-        column& operator <=(const T& data) {
-            _cond.append(" <= ");
-            _cond.append(to_value(data));
-            return *this;
-        }
+    column& operator <=(const T& data) {
+        _cond.append(" <= ");
+        _cond.append(to_value(data));
+        return *this;
+    }
 
     template <typename T>
-        column& operator >(const T& data) {
-            _cond.append(" > ");
-            _cond.append(to_value(data));
-            return *this;
-        }
+    column& operator >(const T& data) {
+        _cond.append(" > ");
+        _cond.append(to_value(data));
+        return *this;
+    }
 
     template <typename T>
-        column& operator <(const T& data) {
-            _cond.append(" < ");
-            _cond.append(to_value(data));
-            return *this;
-        }
+    column& operator <(const T& data) {
+        _cond.append(" < ");
+        _cond.append(to_value(data));
+        return *this;
+    }
 
     const std::string& str() const {
         return _cond;
@@ -291,7 +291,7 @@ public:
         return *this;
     }
 
-    SelectModel& having(column& condition){
+    SelectModel& having(column& condition) {
         _having_condition.push_back(condition.str());
         return *this;
     }
@@ -318,7 +318,7 @@ public:
         return *this;
     }
 
-    virtual const std::string& str() override{
+    virtual const std::string& str() override {
         _sql.clear();
         _sql.append("select ");
         size_t size = _select_columns.size();
@@ -435,18 +435,18 @@ public:
         return *this;
     }
 
-    InsertModel& replace(bool var){
+    InsertModel& replace(bool var) {
         _replace = var;
         return *this;
     }
 
-    virtual const std::string& str() override{
+    virtual const std::string& str() override {
         _sql.clear();
         std::string v_ss;
 
-        if (_replace){
+        if (_replace) {
             _sql.append("insert or replace into ");
-        }else{
+        }else {
             _sql.append("insert into ");
         }
 
@@ -528,12 +528,12 @@ public:
         return *this;
     }
 
-    UpdateModel& where(column& condition){
+    UpdateModel& where(column& condition) {
         _where_condition.push_back(condition.str());
         return *this;
     }
 
-    virtual const std::string& str() override{
+    virtual const std::string& str() override {
         _sql.clear();
         _sql.append("update ");
         _sql.append(_table_name);
@@ -620,12 +620,12 @@ public:
         return *this;
     }
 
-    DeleteModel& where(column& condition){
+    DeleteModel& where(column& condition) {
         _where_condition.push_back(condition.str());
         return *this;
     }
 
-    virtual const std::string& str() override{
+    virtual const std::string& str() override {
         _sql.clear();
         _sql.append("delete from ");
         _sql.append(_table_name);
