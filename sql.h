@@ -1,10 +1,13 @@
 #pragma once
 
+#include <memory>
 #include <vector>
 #include <string>
 #include <map>
 
-namespace sql {
+namespace boosql {
+
+ using namespace std;
 
 template <typename T>
 inline std::string to_value(const T& data) {
@@ -48,207 +51,55 @@ static std::string sql::to_value<time_t>(const time_t& data) {
 }
 */
 
-class column
+class sql_model 
 {
 public:
-    column(const std::string& column) {
-        _cond = column;
+    sql_model() {
+        auto adapter = make_shared<sqlite_adapter>();
+        _adapter = adapter->shared_from_this();
     }
-    virtual ~column() {}
+    sql_model(shared_ptr<adapter> adapter) : _adapter(adapter->shared_from_this()) {}
 
-    column& as(const std::string& s) {
-        _cond.append(" as ");
-        _cond.append(s);
-        return *this;
-    }
-
-    column& is_null() {
-        _cond.append(" is null");
-        return *this;
+    column col(const string & col)
+    {
+        return column(_adapter->quote_field(col));
     }
 
-    column& is_not_null() {
-        _cond.append(" is not null");
-        return *this;
-    }
-
-    template <typename T>
-    column& in(const std::vector<T>& args) {
-        size_t size = args.size();
-        if(size == 1) {
-            _cond.append(" = ");
-            _cond.append(to_value(args[0]));
-        } else {
-            _cond.append(" in (");
-            for(size_t i = 0; i < size; ++i) {
-                if(i < size - 1) {
-                    _cond.append(to_value(args[i]));
-                    _cond.append(", ");
-                } else {
-                    _cond.append(to_value(args[i]));
-                }
-            }
-            _cond.append(")");
-        }
-        return *this;
-    }
-
-    template <typename T>
-    column& not_in(const std::vector<T>& args) {
-        size_t size = args.size();
-        if(size == 1) {
-            _cond.append(" != ");
-            _cond.append(to_value(args[0]));
-        } else {
-            _cond.append(" not in (");
-            for(size_t i = 0; i < size; ++i) {
-                if(i < size - 1) {
-                    _cond.append(to_value(args[i]));
-                    _cond.append(", ");
-                } else {
-                    _cond.append(to_value(args[i]));
-                }
-            }
-            _cond.append(")");
-        }
-        return *this;
-    }
-
-    column& operator &&(column& condition) {
-        std::string str("(");
-        str.append(_cond);
-        str.append(") and (");
-        str.append(condition._cond);
-        str.append(")");
-        condition._cond = str;
-        return condition;
-    }
-
-    column& operator ||(column& condition) {
-        std::string str("(");
-        str.append(_cond);
-        str.append(") or (");
-        str.append(condition._cond);
-        str.append(")");
-        condition._cond = str;
-        return condition;
-    }
-
-    column& operator &&(const std::string& condition) {
-        _cond.append(" and ");
-        _cond.append(condition);
-        return *this;
-    }
-
-    column& operator ||(const std::string& condition) {
-        _cond.append(" or ");
-        _cond.append(condition);
-        return *this;
-    }
-
-    column& operator &&(const char* condition) {
-        _cond.append(" and ");
-        _cond.append(condition);
-        return *this;
-    }
-
-    column& operator ||(const char* condition) {
-        _cond.append(" or ");
-        _cond.append(condition);
-        return *this;
-    }
-
-    template <typename T>
-    column& operator ==(const T& data) {
-        _cond.append(" = ");
-        _cond.append(to_value(data));
-        return *this;
-    }
-
-    template <typename T>
-    column& operator !=(const T& data) {
-        _cond.append(" != ");
-        _cond.append(to_value(data));
-        return *this;
-    }
-
-    template <typename T>
-    column& operator >=(const T& data) {
-        _cond.append(" >= ");
-        _cond.append(to_value(data));
-        return *this;
-    }
-
-    template <typename T>
-    column& operator <=(const T& data) {
-        _cond.append(" <= ");
-        _cond.append(to_value(data));
-        return *this;
-    }
-
-    template <typename T>
-    column& operator >(const T& data) {
-        _cond.append(" > ");
-        _cond.append(to_value(data));
-        return *this;
-    }
-
-    template <typename T>
-    column& operator <(const T& data) {
-        _cond.append(" < ");
-        _cond.append(to_value(data));
-        return *this;
-    }
-
-    const std::string& str() const {
-        return _cond;
-    }
-
-    operator bool() {
-        return true;
-    }
-private:
-    std::string _cond;
-};
-
-
-class SqlModel 
-{
-public:
-    SqlModel() {}
-    virtual ~SqlModel() {}
+    virtual ~sql_model() {}
 
     virtual const std::string& str() = 0;
     const std::string& last_sql() {
         return _sql;
     }
 private:
-    SqlModel(const SqlModel& m) = delete;
-    SqlModel& operator =(const SqlModel& data) = delete;
+    sql_model(const sql_model& m) = delete;
+    sql_model& operator =(const sql_model& data) = delete;
+    shared_ptr<adapter> _adapter;
+
 protected:
     std::string _sql;
 };
 
-class SelectModel : public SqlModel
+class select_model : public sql_model
 {
 public:
-    SelectModel() {}
-    virtual ~SelectModel() {}
+    select_model() {}
+    virtual ~select_model() {}
 
     template <typename... Args>
-    SelectModel& select(const std::string& str, Args&&... columns) {
+    select_model& select(const std::string& str, Args&&... columns) {
         _select_columns.push_back(str);
         select(columns...);
         return *this;
     }
 
     // for recursion
-    SelectModel& select() {
+    select_model& select() {
         return *this;
     }
 
     template <typename... Args>
-    SelectModel& from(const std::string& table_name, Args&&... tables) {
+    select_model& from(const std::string& table_name, Args&&... tables) {
         if(_table_name.empty()) {
             _table_name = table_name;
         } else {
@@ -260,60 +111,60 @@ public:
     }
     
     // for recursion
-    SelectModel& from() {
+    select_model& from() {
         return *this;
     }
 
-    SelectModel& where(const std::string& condition) {
+    select_model& where(const std::string& condition) {
         _where_condition.push_back(condition);
         return *this;
     }
 
-    SelectModel& where(column& condition) {
+    select_model& where(column& condition) {
         _where_condition.push_back(condition.str());
         return *this;
     }
 
     template <typename... Args>
-    SelectModel& group_by(const std::string& str, Args&&...columns) {
+    select_model& group_by(const std::string& str, Args&&...columns) {
         _groupby_columns.push_back(str);
         group_by(columns...);
         return *this;
     }
 
     // for recursion
-    SelectModel& group_by() {
+    select_model& group_by() {
         return *this;
     }
 
-    SelectModel& having(const std::string& condition) {
+    select_model& having(const std::string& condition) {
         _having_condition.push_back(condition);
         return *this;
     }
 
-    SelectModel& having(column& condition) {
+    select_model& having(column& condition) {
         _having_condition.push_back(condition.str());
         return *this;
     }
 
-    SelectModel& order_by(const std::string& order_by) {
+    select_model& order_by(const std::string& order_by) {
         _order_by = order_by;
         return *this;
     }
 
     template <typename T>
-    SelectModel& limit(const T& limit) {
+    select_model& limit(const T& limit) {
         _limit = std::to_string(limit);
         return *this;
     }
     template <typename T>
-    SelectModel& limit(const T& offset, const T& limit) {
+    select_model& limit(const T& offset, const T& limit) {
         _offset = std::to_string(offset);
         _limit = std::to_string(limit);
         return *this;
     }
     template <typename T>
-    SelectModel& offset(const T& offset) {
+    select_model& offset(const T& offset) {
         _offset = std::to_string(offset);
         return *this;
     }
@@ -383,7 +234,7 @@ public:
         return _sql;
     }
 
-    SelectModel& reset() {
+    select_model& reset() {
         _table_name.clear();
         _select_columns.clear();
         _groupby_columns.clear();
@@ -394,7 +245,7 @@ public:
         _offset.clear();
         return *this;
     }
-    friend inline std::ostream& operator<< (std::ostream& out, SelectModel& mod) {
+    friend inline std::ostream& operator<< (std::ostream& out, select_model& mod) {
         out<<mod.str();
         return out;
     }
@@ -412,30 +263,30 @@ protected:
 
 
 
-class InsertModel : public SqlModel
+class insert_model : public sql_model
 {
 public:
-    InsertModel() {}
-    virtual ~InsertModel() {}
+    insert_model() {}
+    virtual ~insert_model() {}
 
     template <typename T>
-    InsertModel& insert(const std::string& c, const T& data) {
+    insert_model& insert(const std::string& c, const T& data) {
         _columns.push_back(c);
         _values.push_back(to_value(data));
         return *this;
     }
 
     template <typename T>
-    InsertModel& operator()(const std::string& c, const T& data) {
+    insert_model& operator()(const std::string& c, const T& data) {
         return insert(c, data);
     }
 
-    InsertModel& into(const std::string& table_name) {
+    insert_model& into(const std::string& table_name) {
         _table_name = table_name;
         return *this;
     }
 
-    InsertModel& replace(bool var) {
+    insert_model& replace(bool var) {
         _replace = var;
         return *this;
     }
@@ -471,14 +322,14 @@ public:
         return _sql;
     }
 
-    InsertModel& reset() {
+    insert_model& reset() {
         _table_name.clear();
         _columns.clear();
         _values.clear();
         return *this;
     }
 
-    friend inline std::ostream& operator<< (std::ostream& out, InsertModel& mod) {
+    friend inline std::ostream& operator<< (std::ostream& out, insert_model& mod) {
         out<<mod.str();
         return out;
     }
@@ -491,26 +342,26 @@ protected:
 };
 
 template <>
-inline InsertModel& InsertModel::insert(const std::string& c, const std::nullptr_t&) {
+inline insert_model& insert_model::insert(const std::string& c, const std::nullptr_t&) {
     _columns.push_back(c);
     _values.push_back("null");
     return *this;
 }
 
 
-class UpdateModel : public SqlModel
+class update_model : public sql_model
 {
 public:
-    UpdateModel() {}
-    virtual ~UpdateModel() {}
+    update_model() {}
+    virtual ~update_model() {}
 
-    UpdateModel& update(const std::string& table_name) {
+    update_model& update(const std::string& table_name) {
         _table_name = table_name;
         return *this;
     }
 
     template <typename T>
-    UpdateModel& set(const std::string& c, const T& data) {
+    update_model& set(const std::string& c, const T& data) {
         std::string str(c);
         str.append(" = ");
         str.append(to_value(data));
@@ -519,16 +370,16 @@ public:
     }
 
     template <typename T>
-    UpdateModel& operator()(const std::string& c, const T& data) {
+    update_model& operator()(const std::string& c, const T& data) {
         return set(c, data);
     }
 
-    UpdateModel& where(const std::string& condition) {
+    update_model& where(const std::string& condition) {
         _where_condition.push_back(condition);
         return *this;
     }
 
-    UpdateModel& where(column& condition) {
+    update_model& where(column& condition) {
         _where_condition.push_back(condition.str());
         return *this;
     }
@@ -562,13 +413,13 @@ public:
         return _sql;
     }
 
-    UpdateModel& reset() {
+    update_model& reset() {
         _table_name.clear();
         _set_columns.clear();
         _where_condition.clear();
         return *this;
     }
-    friend inline std::ostream& operator<< (std::ostream& out, UpdateModel& mod) {
+    friend inline std::ostream& operator<< (std::ostream& out, update_model& mod) {
         out<<mod.str();
         return out;
     }
@@ -580,7 +431,7 @@ protected:
 };
 
 template <>
-inline UpdateModel& UpdateModel::set(const std::string& c, const std::nullptr_t&) {
+inline update_model& update_model::set(const std::string& c, const std::nullptr_t&) {
     std::string str(c);
     str.append(" = null");
     _set_columns.push_back(str);
@@ -588,18 +439,18 @@ inline UpdateModel& UpdateModel::set(const std::string& c, const std::nullptr_t&
 }
 
 
-class DeleteModel : public SqlModel
+class delete_model : public sql_model
 {
 public:
-    DeleteModel() {}
-    virtual ~DeleteModel() {}
+    delete_model() {}
+    virtual ~delete_model() {}
 
-    DeleteModel& _delete() {
+    delete_model& _delete() {
         return *this;
     }
 
     template <typename... Args>
-    DeleteModel& from(const std::string& table_name, Args&&... tables) {
+    delete_model& from(const std::string& table_name, Args&&... tables) {
         if(_table_name.empty()) {
             _table_name = table_name;
         } else {
@@ -611,16 +462,16 @@ public:
     }
     
     // for recursion
-    DeleteModel& from() {
+    delete_model& from() {
         return *this;
     }
 
-    DeleteModel& where(const std::string& condition) {
+    delete_model& where(const std::string& condition) {
         _where_condition.push_back(condition);
         return *this;
     }
 
-    DeleteModel& where(column& condition) {
+    delete_model& where(column& condition) {
         _where_condition.push_back(condition.str());
         return *this;
     }
@@ -644,12 +495,12 @@ public:
         return _sql;
     }
 
-    DeleteModel& reset() {
+    delete_model& reset() {
         _table_name.clear();
         _where_condition.clear();
         return *this;
     }
-    friend inline std::ostream& operator<< (std::ostream& out, DeleteModel& mod) {
+    friend inline std::ostream& operator<< (std::ostream& out, delete_model& mod) {
         out<<mod.str();
         return out;
     }
