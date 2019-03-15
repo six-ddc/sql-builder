@@ -11,9 +11,9 @@ class insert_model : public model
 {
     class row_interface {
     public:
-        virtual const string & fields(adapter *) = 0;
-        virtual const string & values(adapter *) = 0;
-        virtual const string & values(adapter *, vector<string> &) = 0;
+        virtual const std::string & fields(adapter *) = 0;
+        virtual const std::string & values(adapter *) = 0;
+        virtual const std::string & values(adapter *, std::vector<std::string> &) = 0;
     };
 
     class row : public row_interface {
@@ -22,7 +22,7 @@ class insert_model : public model
 
         template <typename T>
         row& insert(const std::string& c, const T& data) {
-            ostringstream str;
+            std::ostringstream str;
             str << data;
             _data[c] = str.str();
             return *this;
@@ -37,7 +37,7 @@ class insert_model : public model
             return _model;
         }
 
-        const string & fields(adapter * adapter) override
+        const std::string & fields(adapter * adapter) override
         {
             if (_fields != "") {
                 return _fields;
@@ -58,7 +58,7 @@ class insert_model : public model
             return _fields;
         }
 
-        const string & values(adapter * adapter) override
+        const std::string & values(adapter * adapter) override
         {
             if (_values != "") {
                 return _values;
@@ -79,7 +79,7 @@ class insert_model : public model
             return _values;
         }
 
-        const string & values(adapter * adapter, vector<string> & params) override
+        const std::string & values(adapter * adapter, std::vector<std::string> & params) override
         {
             if (_values != "") {
                 return _values;
@@ -103,13 +103,13 @@ class insert_model : public model
 
     private:    
         insert_model & _model;
-        map<string, string> _data;
-        string _fields;
-        string _values;
+        std::map<std::string, std::string> _data;
+        std::string _fields;
+        std::string _values;
     };
 
 public:
-    insert_model(shared_ptr<adapter> adapter) : model(adapter) {}
+    insert_model(std::shared_ptr<adapter> adapter) : model(adapter) {}
     virtual ~insert_model()
     {
         auto i = _rows.begin();
@@ -141,12 +141,12 @@ public:
         return *this;
     }
 
-    const string & table_name() override
+    const std::string & table_name() override
     {
         return _table_name;
     }
 
-    const string& str() override {
+    const std::string& str() override {
         _sql.clear();
         if (_replace) {
             _sql.append("INSERT INTO OR REPLACE INFO ");
@@ -171,7 +171,7 @@ public:
         return _sql;
     }
 
-    const string &str(vector<string> &params) override
+    const std::string &str(std::vector<std::string> &params) override
     {
         _sql.clear();
         if (_replace) {
@@ -210,9 +210,8 @@ public:
 
 protected:
     bool _replace = false;
-    string _table_name;
-    
-    vector<row_interface *> _rows;
+    std::string _table_name;
+    std::vector<row_interface *> _rows;
 };
 
 }

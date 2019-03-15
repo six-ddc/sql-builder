@@ -9,7 +9,6 @@
 
 namespace boosql {
 
-using namespace std;
 
 class select_model : public model
 {
@@ -19,7 +18,7 @@ class select_model : public model
     public:
         join_t(select_model & selector, select_model & model) : _selector(selector), model(model) {}
 
-        join_t & on(string main)
+        join_t & on(std::string main)
         {
             if (ons.size() > 0) {
                 ons.push_back(col().and());
@@ -28,7 +27,7 @@ class select_model : public model
 
             return *this;
         }
-        join_t & operator () (string oper, col second)
+        join_t & operator () (std::string oper, col second)
         {
             ons.push_back(col()(oper));
             ons.push_back(second.table_name(model.table_name()));
@@ -36,7 +35,7 @@ class select_model : public model
             return *this;
         }
 
-        join_t & or_on(string main)
+        join_t & or_on(std::string main)
         {
             ons.push_back(col().or());
             ons.push_back(col(main, _selector.table_name()));
@@ -52,12 +51,12 @@ class select_model : public model
     public:
         join_type type;
         select_model & model;
-        vector<col> ons;
+        std::vector<col> ons;
     private:
         select_model & _selector;
     };
 public:
-    select_model(shared_ptr<adapter> adapter): model(adapter) {}
+    select_model(std::shared_ptr<adapter> adapter): model(adapter) {}
     virtual ~select_model() {}
 
     template <typename... Args>
@@ -72,12 +71,12 @@ public:
         return *this;
     }
 
-    select_model& from(const string& table_name) {
+    select_model& from(const std::string& table_name) {
         _table_name = table_name;
         return *this;
     }
     
-    select_model& and_where(const string & condition)
+    select_model& and_where(const std::string & condition)
     {
         model::and_where(condition);
         return *this;
@@ -89,7 +88,7 @@ public:
         return *this;
     }
 
-    select_model& or_where(const string & condition)
+    select_model& or_where(const std::string & condition)
     {
         model::or_where(condition);
         return *this;
@@ -107,7 +106,7 @@ public:
         return *this;
     }
 
-    select_model& where(const string& condition) {
+    select_model& where(const std::string& condition) {
         model::where(condition);
         return *this;
     }
@@ -141,7 +140,7 @@ public:
         return *this;
     }
 
-    select_model& having(const string& condition) {
+    select_model& having(const std::string& condition) {
         _having_condition.push_back(col("")(condition));
         return *this;
     }
@@ -158,7 +157,7 @@ public:
 
     template <typename T>
     select_model& limit(const T& limit) {
-        _limit = to_string(limit);
+        _limit = std::to_string(limit);
 
         return *this;
     }
@@ -171,16 +170,16 @@ public:
 
     template <typename T>
     select_model& offset(const T& offset) {
-        _offset = to_string(offset);
+        _offset = std::to_string(offset);
         return *this;
     }
 
-    const string & table_name()
+    const std::string & table_name()
     {
         return _table_name;
     }
 
-    const string& str() override
+    const std::string& str() override
     {
         _sql.clear();
         _sql.append("SELECT ");
@@ -203,7 +202,7 @@ public:
         return _sql;
     }
 
-    const string & str(vector<string> &params) override
+    const std::string & str(std::vector<std::string> &params) override
     {
         _sql.clear();
         _sql.append("SELECT ");
@@ -226,9 +225,9 @@ public:
         return _sql;
     }
 
-    string order_by_str()
+    std::string order_by_str()
     {
-        string ret;
+        std::string ret;
         auto size = _order_by.size();
         if (size > 0) {
             ret.append(" ORDER BY ");
@@ -243,9 +242,9 @@ public:
         return ret;
     }
 
-    string join_str()
+    std::string join_str()
     {
-        string ret;
+        std::string ret;
         for (auto i = _joins.begin(); i != _joins.end(); ++i) {
             switch ((*i).type) {
             case left:
@@ -269,9 +268,9 @@ public:
         return ret;
     }
 
-    string where_str()
+    std::string where_str()
     {
-        string ret = model::where_str();
+        std::string ret = model::where_str();
         for (auto i = _joins.begin(); i != _joins.end(); ++i) {
             if (ret.length() > 0) {
                 ret.append(" AND ");
@@ -285,9 +284,9 @@ public:
         return ret;
     }
 
-    string where_str(vector<string> & params)
+    std::string where_str(std::vector<std::string> & params)
     {
-        string ret = model::where_str(params);
+        std::string ret = model::where_str(params);
         for (auto i = _joins.begin(); i != _joins.end(); ++i) {
             if (ret.length() > 0) {
                 ret.append(" AND ");
@@ -301,9 +300,9 @@ public:
         return ret;
     }
 
-    string having_str()
+    std::string having_str()
     {
-        string ret;
+        std::string ret;
         auto size = _having_condition.size();
         if(size > 0) {
             ret.append(" HAVING ");
@@ -318,9 +317,9 @@ public:
         return ret;
     }
 
-    string group_by_str()
+    std::string group_by_str()
     {
-        string ret;
+        std::string ret;
         auto size = _groupby_columns.size();
         if(!_groupby_columns.empty()) {
             ret.append(" GROUP BY ");
@@ -336,9 +335,9 @@ public:
     }
 
 
-    string select_str()
+    std::string select_str()
     {
-        string ret = "";
+        std::string ret = "";
         int count = 0;
         for (auto i = _select.begin(); i != _select.end(); ++i) {
             count++;
@@ -366,8 +365,8 @@ public:
         _offset.clear();
         return *this;
     }
-    friend inline ostream& operator<< (ostream& out, select_model& mod) {
-        out<<mod.str();
+    friend inline std::ostream& operator<< (std::ostream& out, select_model& mod) {
+        out << mod.str();
         return out;
     }
 
@@ -382,14 +381,14 @@ public:
     }
 
 private:
-    string _table_name;
-    vector<join_t> _joins;
-    vector<col> _select;
-    vector<col> _groupby_columns;
-    vector<col> _having_condition;
-    vector<col> _order_by;
-    string _limit;
-    string _offset;
+    std::string _table_name;
+    std::vector<join_t> _joins;
+    std::vector<col> _select;
+    std::vector<col> _groupby_columns;
+    std::vector<col> _having_condition;
+    std::vector<col> _order_by;
+    std::string _limit;
+    std::string _offset;
 };
 
 }

@@ -10,7 +10,7 @@ namespace boosql {
 class update_model : public model
 {
 public:
-    update_model(shared_ptr<adapter> adapter) : model(adapter) {}
+    update_model(std::shared_ptr<adapter> a) : model(a) {}
     update_model& update(const std::string& table_name) {
         _table_name = table_name;
         return *this;
@@ -27,7 +27,7 @@ public:
         return set(c, data);
     }
 
-    update_model& and_where(const string & condition)
+    update_model& and_where(const std::string & condition)
     {
         model::and_where(condition);
         return *this;
@@ -39,7 +39,7 @@ public:
         return *this;
     }
 
-    update_model& or_where(const string & condition)
+    update_model& or_where(const std::string & condition)
     {
         model::or_where(condition);
         return *this;
@@ -57,7 +57,7 @@ public:
         return *this;
     }
 
-    update_model& where(const string& condition) {
+    update_model& where(const std::string& condition) {
         model::where(condition);
         return *this;
     }
@@ -67,12 +67,12 @@ public:
         return *this;
     }
 
-    virtual const string & table_name()
+    virtual const std::string & table_name()
     {
         return _table_name;
     }
 
-    const string& str() override
+    const std::string& str() override
     {
         _sql.clear();
         _sql.append("UPDATE ");
@@ -90,7 +90,7 @@ public:
         return _sql;
     }
 
-    const string& str(vector<string> & params) override
+    const std::string& str(std::vector<std::string> & params) override
     {
         _sql.clear();
         _sql.append("UPDATE ");
@@ -120,8 +120,8 @@ public:
     }
 
 protected:
-    vector<col> _columns;
-    string _table_name;
+    std::vector<col> _columns;
+    std::string _table_name;
 };
 
 }

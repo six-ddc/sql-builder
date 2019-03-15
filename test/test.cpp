@@ -26,7 +26,7 @@ using namespace boosql;
 
 int main() 
 {
-    shared_ptr<sqlite_adapter> a = make_shared<sqlite_adapter>();
+    std::shared_ptr<sqlite_adapter> a = std::make_shared<sqlite_adapter>();
 
     select_model selector(a);
     selector.from("users")
@@ -42,15 +42,15 @@ int main()
     selector.left_join(group).on("hello")("=", col("a")).or_on("id")("=", col("b")).end();
 
     selector.group_by(col("hello")).order_by(col("hello")("DESC"));
-    cout << selector.str() << endl;
+    std::cout << selector.str() << std::endl;
 
     update_model updater(a);
     updater.update("users")("hello", "hello")("world", "world").where(col("id") == 2);
-    cout << updater.str() << endl;
+    std::cout << updater.str() << std::endl;
 
     delete_model deleter(a);
     deleter.from("users").where(col("id") == 1).or_where(col("name")["%hello"]);
-    cout << deleter.str() << endl;
+    std::cout << deleter.str() << std::endl;
 
     insert_model insert(a);
     insert.into("users")
@@ -60,7 +60,7 @@ int main()
         ("id", 2)
         ("name", "world");
 
-    cout << insert.str() << endl;
+    std::cout << insert.str() << std::endl;
 
     return 0;
 }

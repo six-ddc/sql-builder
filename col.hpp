@@ -7,8 +7,6 @@
 namespace boosql
 {
 
-using namespace std;
-
 class col
 {
     typedef enum {field, value, other} witch;
@@ -16,19 +14,19 @@ class col
     struct item {
     public:
         witch type;
-        string val;
+        std::string val;
     };
 
 public:
     col() {}
 
 
-    col(const string & c)
+    col(const std::string & c)
     {
         name(c);
     }
 
-    col(const string & c, const string & tn)
+    col(const std::string & c, const std::string & tn)
     {
         name(c);
         table_name(tn);
@@ -36,7 +34,7 @@ public:
 
     virtual ~col() {}
 
-    col & name(const string & c)
+    col & name(const std::string & c)
     {
         if (c != "") {
             _items.push_back(item{ field, c });
@@ -44,13 +42,13 @@ public:
         return *this;
     }
 
-    col & table_name(const string & tn)
+    col & table_name(const std::string & tn)
     {
         _table_name = tn;
         return *this;
     }
 
-    col& as(const string& s)
+    col& as(const std::string& s)
     {
         _items.push_back(item{other, "AS " + s});
         return *this;
@@ -67,26 +65,26 @@ public:
     }
 
     template <typename T>
-    col& in(const vector<T>& args) {
+    col& in(const std::vector<T>& args) {
         return in_or_not(args, "IN");
     }
 
     template <typename T>
-    col& not_in(const vector<T>& args) {
+    col& not_in(const std::vector<T>& args) {
         return in_or_not(args, "NOT IN");
     }
 
     template<typename T>
-    col & in_or_not(const vector<T>& args, string in)
+    col & in_or_not(const std::vector<T>& args, std::string in)
     {
         size_t size = args.size();
         if(size == 1) {
-            _items.push_back(item<string>{other, "="});
+            _items.push_back(item<std::string>{other, "="});
             ostringstream str;
             str << args[0];
-            _items.push_back(item<string>{value, str.str()});
+            _items.push_back(item<std::string>{value, str.str()});
         } else {
-            _items.push_back(item<string>{other, in + " ("});
+            _items.push_back(item<std::string>{other, in + " ("});
             for(size_t i = 0; i < size; ++i) {
                 ostringstream str;
                 str << args[i];
@@ -124,7 +122,7 @@ public:
         return *this;
     }
 
-    col& operator ()(const string & any)
+    col& operator ()(const std::string & any)
     {
         _items.push_back(item{other, any});
         return *this;
@@ -133,7 +131,7 @@ public:
     template<typename T>
     col & val(const T& data)
     {
-        ostringstream str;
+        std::ostringstream str;
         str << data;
         _items.push_back(item{value, str.str()});
 
@@ -141,10 +139,10 @@ public:
     }
 
     template<typename T>
-    col & val(const vector<T> &data)
+    col & val(const std::vector<T> &data)
     {
         for (auto i = data.begin(); i != data.end(); ++i) {
-            ostringstream str;
+            std::ostringstream str;
             str << *i;
             _items.push_back(item{value, str.str()});
         }
@@ -175,7 +173,7 @@ public:
         }
     }
 
-    col& operator &&(const string& condition)
+    col& operator &&(const std::string& condition)
     {
         quote_begin();
         _items.push_back(item{other, condition});
@@ -184,7 +182,7 @@ public:
         return *this;
     }
 
-    col& operator ||(const string& condition) {
+    col& operator ||(const std::string& condition) {
         quote_begin();
         _items.push_back(item{other, condition});
         quote_end();
@@ -193,22 +191,22 @@ public:
     }
 
     col& operator &&(const char* condition) {
-        return operator &&(string(condition));
+        return operator &&(std::string(condition));
     }
 
     col& operator ||(const char* condition) {
-        return operator ||(string(condition));
+        return operator ||(std::string(condition));
     }
 
     col& operator [] (const char * data) {
         return with_operator(data, "LIKE");
     }
 
-    col& operator [] (const string & data) {
+    col& operator [] (const std::string & data) {
         return with_operator(data, "LIKE");
     }
 
-    col & escape(const string & data) {
+    col & escape(const std::string & data) {
         _items.push_back(item{other, "{ ESCAPE "});
         _items.push_back(item{value, data});
         _items.push_back(item{other, "}"});
@@ -247,9 +245,9 @@ public:
     }
 
     template <typename T>
-    col & with_operator(const T & data, const string & oper)
+    col & with_operator(const T & data, const std::string & oper)
     {
-        ostringstream str;
+        std::ostringstream str;
         str << data;
         _items.push_back(item{other, oper});
         _items.push_back(item{value, str.str()});
@@ -257,19 +255,19 @@ public:
         return *this;
     }
 
-    string str(adapter * adapter) const
+    std::string str(adapter * adapter) const
     {
         return str(adapter, "");
     }
 
-    string str(adapter * adapter, vector<string> & params) const
+    std::string str(adapter * adapter, std::vector<std::string> & params) const
     {   
         return str(adapter, "", params);
     }
 
-    string str(adapter * adapter, string table_name) const {
-        string ret = "";
-        string pre_col = "";
+    std::string str(adapter * adapter, std::string table_name) const {
+        std::string ret = "";
+        std::string pre_col = "";
         if (table_name != "") {
             pre_col = adapter->quote_field(table_name) + ".";
         } else if (_table_name != "") {
@@ -292,10 +290,10 @@ public:
         return ret;
     }
 
-    string str(adapter * adapter, string table_name, vector<string> & params) const
+    std::string str(adapter * adapter, std::string table_name, std::vector<std::string> & params) const
     {
-        string ret = "";
-        string pre_col = "";
+        std::string ret = "";
+        std::string pre_col = "";
         if (table_name != "") {
             pre_col = adapter->quote_field(table_name) + ".";
         } else if (_table_name != "") {
@@ -319,7 +317,7 @@ public:
         return ret;
     }
 
-    static col pre_quote(const string & c)
+    static col pre_quote(const std::string & c)
     {
         return col().quote_begin().name(c);
     }
@@ -328,8 +326,8 @@ public:
         return true;
     }
 private:
-    vector<item> _items;
-    string _table_name = "";
+    std::vector<item> _items;
+    std::string _table_name = "";
 };
 
 }

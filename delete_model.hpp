@@ -6,12 +6,10 @@
 
 namespace boosql {
 
-using namespace std;
-
 class delete_model : public model
 {
 public:
-    delete_model(shared_ptr<adapter> adapter) : model(adapter) {}
+    delete_model(std::shared_ptr<adapter> adapter) : model(adapter) {}
 
     virtual ~delete_model() {}
 
@@ -20,7 +18,7 @@ public:
         return *this;
     }
 
-    delete_model& and_where(const string & condition)
+    delete_model& and_where(const std::string & condition)
     {
         model::and_where(condition);
         return *this;
@@ -32,7 +30,7 @@ public:
         return *this;
     }
 
-    delete_model& or_where(const string & condition)
+    delete_model& or_where(const std::string & condition)
     {
         model::or_where(condition);
         return *this;
@@ -50,7 +48,7 @@ public:
         return *this;
     }
 
-    delete_model& where(const string& condition) {
+    delete_model& where(const std::string& condition) {
         model::where(condition);
         return *this;
     }
@@ -60,12 +58,12 @@ public:
         return *this;
     }
     
-    const string & table_name()
+    const std::string & table_name()
     {
         return _table_name;
     }
 
-    const string& str() override {
+    const std::string& str() override {
         _sql.clear();
         _sql.append("DELETE FROM ");
         _sql.append(_adapter->quote_field(_table_name));
@@ -74,7 +72,7 @@ public:
         return _sql;
     }
 
-    const string& str(vector<string> & params) override {
+    const std::string& str(std::vector<std::string> & params) override {
         _sql.clear();
         _sql.append("DELETE FROM ");
         _sql.append(_adapter->quote_field(_table_name));
