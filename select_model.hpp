@@ -56,6 +56,7 @@ class select_model : public model
         select_model & _selector;
     };
 public:
+    select_model() {}
     select_model(std::shared_ptr<adapter> adapter): model(adapter) {}
     virtual ~select_model() {}
 

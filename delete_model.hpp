@@ -9,6 +9,7 @@ namespace boosql {
 class delete_model : public model
 {
 public:
+    delete_model() {}
     delete_model(std::shared_ptr<adapter> adapter) : model(adapter) {}
 
     virtual ~delete_model() {}

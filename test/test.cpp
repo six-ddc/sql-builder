@@ -48,7 +48,8 @@ int main()
     updater.update("users")("hello", "hello")("world", "world").where(col("id") == 2);
     std::cout << updater.str() << std::endl;
 
-    delete_model deleter(a);
+    delete_model deleter;
+    // delete_model deleter(a);
     deleter.from("users").where(col("id") == 1).or_where(col("name")["%hello"]);
     std::cout << deleter.str() << std::endl;
 

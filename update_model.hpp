@@ -10,6 +10,7 @@ namespace boosql {
 class update_model : public model
 {
 public:
+    update_model() {}
     update_model(std::shared_ptr<adapter> a) : model(a) {}
     update_model& update(const std::string& table_name) {
         _table_name = table_name;

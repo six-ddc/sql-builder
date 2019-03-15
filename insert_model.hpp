@@ -109,6 +109,7 @@ class insert_model : public model
     };
 
 public:
+    insert_model() {}
     insert_model(std::shared_ptr<adapter> adapter) : model(adapter) {}
     virtual ~insert_model()
     {
