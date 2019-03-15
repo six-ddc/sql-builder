@@ -7,7 +7,7 @@
 ## Examples:
 
 ``` c++
- #include <iostream>
+#include <iostream>
 #include <sstream>
 
 #include "col.hpp"
@@ -42,6 +42,12 @@ int main()
         .quote([](select_model & model) {
             model.where(col("id") != 1).or_where(col("id") != 2);
         });
+    select_model group(a);
+
+    group.from("group").select(col("a"), col("b"), col("c")).where(col("a") == 2);
+
+    selector.left_join(group).on("hello")("=", col("a")).or_on("id")("=", col("b")).end();
+
     selector.group_by(col("hello")).order_by(col("hello")("DESC"));
     cout << selector.str() << endl;
 
