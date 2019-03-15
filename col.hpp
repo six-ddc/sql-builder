@@ -20,22 +20,35 @@ class col
     };
 
 public:
+    col() {}
+
+
     col(const string & c)
+    {
+        name(c);
+    }
+
+    col(const string & c, const string & tn)
+    {
+        name(c);
+        table_name(tn);
+    }
+
+    virtual ~col() {}
+
+    col & name(const string & c)
     {
         if (c != "") {
             _items.push_back(item{ field, c });
         }
+        return *this;
     }
 
-    col(const string & c, bool with_quote_begin)
+    col & table_name(const string & tn)
     {
-        quote_begin();
-        if (c != "") {
-            _items.push_back(item{field, c});
-        }
+        _table_name = tn;
+        return *this;
     }
-
-    virtual ~col() {}
 
     col& as(const string& s)
     {
@@ -259,6 +272,8 @@ public:
         string pre_col = "";
         if (table_name != "") {
             pre_col = adapter->quote_field(table_name) + ".";
+        } else if (_table_name != "") {
+            pre_col = adapter->quote_field(_table_name) + ".";
         }
         for(auto i = _items.begin(); i != _items.end(); ++i) {
             auto it = *i;
@@ -283,6 +298,8 @@ public:
         string pre_col = "";
         if (table_name != "") {
             pre_col = adapter->quote_field(table_name) + ".";
+        } else if (_table_name != "") {
+            pre_col = adapter->quote_field(_table_name) + ".";
         }
         for(auto i = _items.begin(); i != _items.end(); ++i) {
             auto it = *i;
@@ -304,7 +321,7 @@ public:
 
     static col pre_quote(const string & c)
     {
-        return col(c, true);
+        return col().quote_begin().name(c);
     }
 
     operator bool() {
@@ -312,6 +329,7 @@ public:
     }
 private:
     vector<item> _items;
+    string _table_name = "";
 };
 
 }

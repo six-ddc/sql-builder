@@ -13,6 +13,49 @@ using namespace std;
 
 class select_model : public model
 {
+    typedef enum {left, right, inner} join_type;
+
+    class join_t {
+    public:
+        join_t(select_model & selector, select_model & model) : _selector(selector), model(model) {}
+
+        join_t & on(string main)
+        {
+            if (ons.size() > 0) {
+                ons.push_back(col().and());
+            }
+            ons.push_back(col(main, _selector.table_name()));
+
+            return *this;
+        }
+        join_t & operator () (string oper, col second)
+        {
+            ons.push_back(col()(oper));
+            ons.push_back(second.table_name(model.table_name()));
+
+            return *this;
+        }
+
+        join_t & or_on(string main)
+        {
+            ons.push_back(col().or());
+            ons.push_back(col(main, _selector.table_name()));
+
+            return *this;
+        }
+
+        select_model & end()
+        {
+            return _selector;
+        }
+
+    public:
+        join_type type;
+        select_model & model;
+        vector<col> ons;
+    private:
+        select_model & _selector;
+    };
 public:
     select_model(shared_ptr<adapter> adapter): model(adapter) {}
     virtual ~select_model() {}
@@ -74,6 +117,18 @@ public:
         return *this;
     }
 
+    join_t & left_join(select_model & m) {
+        return join(m, left);
+    }
+
+    join_t & right_join(select_model &m) {
+        return join(m, right);
+    }
+
+    join_t & inner_join(select_model &m) {
+        return join(m, inner);
+    }
+
     template <typename... Args>
     select_model& group_by(const col& c, Args&&...columns) {
         _groupby_columns.push_back(c);
@@ -132,7 +187,31 @@ public:
         _sql.append(select_str());
         _sql.append(" FROM ");
         _sql.append(_table_name);
-        _sql.append(where_str());
+        _sql.append(join_str());
+        append_where();
+        _sql.append(group_by_str());
+        _sql.append(having_str());
+        _sql.append(order_by_str());
+        if(!_limit.empty()) {
+            _sql.append(" LIMIT ");
+            _sql.append(_limit);
+        }
+        if(!_offset.empty()) {
+            _sql.append(" OFFSET ");
+            _sql.append(_offset);
+        }
+        return _sql;
+    }
+
+    const string & str(vector<string> &params) override
+    {
+        _sql.clear();
+        _sql.append("SELECT ");
+        _sql.append(select_str());
+        _sql.append(" FROM ");
+        _sql.append(_table_name);
+        _sql.append(join_str());
+        append_where(params);
         _sql.append(group_by_str());
         _sql.append(having_str());
         _sql.append(order_by_str());
@@ -158,6 +237,64 @@ public:
                 if(i < size - 1) {
                     _sql.append(", ");
                 }
+            }
+        }
+
+        return ret;
+    }
+
+    string join_str()
+    {
+        string ret;
+        for (auto i = _joins.begin(); i != _joins.end(); ++i) {
+            switch ((*i).type) {
+            case left:
+                ret.append(" LEFT");
+                break;
+            case right:
+                ret.append(" RIGHT");
+                break;
+            case inner:
+                ret.append(" INNER");
+                break;
+            }
+            ret.append(" JOIN " + (*i).model.table_name());
+            ret.append(" ON ");
+            auto ons = (*i).ons;
+            for (auto j = ons.begin(); j != ons.end(); ++j) {
+                ret.append((*j).str(_adapter.get()));
+            }
+        }
+
+        return ret;
+    }
+
+    string where_str()
+    {
+        string ret = model::where_str();
+        for (auto i = _joins.begin(); i != _joins.end(); ++i) {
+            if (ret.length() > 0) {
+                ret.append(" AND ");
+            }
+            auto s = (*i).model.where_str();
+            if (s.length() > 0) {
+                ret.append("(" + s + ")");
+            }
+        }
+
+        return ret;
+    }
+
+    string where_str(vector<string> & params)
+    {
+        string ret = model::where_str(params);
+        for (auto i = _joins.begin(); i != _joins.end(); ++i) {
+            if (ret.length() > 0) {
+                ret.append(" AND ");
+            }
+            auto s = (*i).model.where_str(params);
+            if (s.length() > 0) {
+                ret.append("(" + s + ")");
             }
         }
 
@@ -210,6 +347,10 @@ public:
                 ret.append(", ");
             }
         }
+        for (auto i = _joins.begin(); i != _joins.end(); ++i) {
+            ret.append(", ");
+            ret.append((*i).model.select_str());
+        }
 
         return ret;
     }
@@ -230,8 +371,19 @@ public:
         return out;
     }
 
+ private:
+
+    join_t & join(select_model & m, join_type type) {
+        join_t j(*this, m);
+        j.type = type;
+        _joins.push_back(j);
+
+        return _joins.back();
+    }
+
 private:
     string _table_name;
+    vector<join_t> _joins;
     vector<col> _select;
     vector<col> _groupby_columns;
     vector<col> _having_condition;

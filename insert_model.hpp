@@ -11,8 +11,9 @@ class insert_model : public model
 {
     class row_interface {
     public:
-        virtual const string & fields(adapter *, const string &) = 0;
+        virtual const string & fields(adapter *) = 0;
         virtual const string & values(adapter *) = 0;
+        virtual const string & values(adapter *, vector<string> &) = 0;
     };
 
     class row : public row_interface {
@@ -36,7 +37,7 @@ class insert_model : public model
             return _model;
         }
 
-        const string & fields(adapter * adapter, const string & table_name) override
+        const string & fields(adapter * adapter) override
         {
             if (_fields != "") {
                 return _fields;
@@ -46,7 +47,7 @@ class insert_model : public model
             int count = 0;
             for (auto i = _data.begin(); i != _data.end(); ++i) {
                 count++;
-                _fields.append(col(i->first).str(adapter, table_name));
+                _fields.append(col(i->first).str(adapter));
                 if (count < size) {
                     _fields.append(", ");
                 }
@@ -68,6 +69,28 @@ class insert_model : public model
             for (auto i = _data.begin(); i != _data.end(); ++i) {
                 count++;
                 _values.append(adapter->quote_value(i->second));
+                if (count < size) {
+                    _values.append(", ");
+                }
+            }
+
+            _values.append(")");
+
+            return _values;
+        }
+
+        const string & values(adapter * adapter, vector<string> & params) override
+        {
+            if (_values != "") {
+                return _values;
+            }
+            _values = "(";
+            auto size = _data.size();
+            int count = 0;
+            for (auto i = _data.begin(); i != _data.end(); ++i) {
+                count++;
+                _values.append(adapter->placeholder());
+                params.push_back(i->second);
                 if (count < size) {
                     _values.append(", ");
                 }
@@ -136,10 +159,36 @@ public:
         for (auto i = _rows.begin(); i != _rows.end(); ++i) {
             count++;
             if (count == 1) {
-                _sql.append((*i)->fields(_adapter.get(), _table_name));
+                _sql.append((*i)->fields(_adapter.get()));
                 _sql.append(" VALUES");
             }
             _sql.append((*i)->values(_adapter.get()));
+            if (count < size) {
+                _sql.append(", ");
+            }
+        }
+
+        return _sql;
+    }
+
+    const string &str(vector<string> &params) override
+    {
+        _sql.clear();
+        if (_replace) {
+            _sql.append("INSERT INTO OR REPLACE INFO ");
+        }else {
+            _sql.append("INSERT INTO ");
+        }
+        _sql.append(_adapter->quote_field(_table_name));
+        auto size = _rows.size();
+        int count = 0;
+        for (auto i = _rows.begin(); i != _rows.end(); ++i) {
+            count++;
+            if (count == 1) {
+                _sql.append((*i)->fields(_adapter.get()));
+                _sql.append(" VALUES");
+            }
+            _sql.append((*i)->values(_adapter.get(), params));
             if (count < size) {
                 _sql.append(", ");
             }

@@ -22,15 +22,21 @@ public:
 
     model(shared_ptr<adapter> adapter) : _adapter(adapter->shared_from_this()) {}
 
-    string where_str()
+    virtual string where_str()
     {
         string ret;
-        auto size = _where_condition.size();
-        if(size > 0) {
-            ret.append(" WHERE ");
-            for(size_t i = 0; i < size; ++i) {
-                ret.append(_where_condition[i].str(_adapter.get(), table_name()));
-            }
+        for(auto i = _where_condition.begin(); i != _where_condition.end(); ++i) {
+            ret.append((*i).str(_adapter.get(), table_name()));
+        }
+
+        return ret;
+    }
+
+    virtual string where_str(vector<string> & params)
+    {
+        string ret;
+        for(auto i = _where_condition.begin(); i != _where_condition.end(); ++i) {
+            ret.append((*i).str(_adapter.get(), table_name(), params));
         }
 
         return ret;
@@ -40,8 +46,28 @@ public:
 
     virtual const string & table_name() = 0;
     virtual const std::string& str() = 0;
+    virtual const std::string& str(vector<string> &) = 0;
 
 protected:
+
+    void append_where()
+    {
+        string w = where_str();
+        if (w.length() > 0) {
+            _sql.append( " WHERE " );
+            _sql.append(w);
+        }
+    }
+
+    void append_where(vector<string> & params)
+    {
+        string w = where_str(params);
+        if (w.length() > 0) {
+            _sql.append( " WHERE " );
+            _sql.append(w);
+        }
+    }
+
     void and_where(const string & condition)
     {
         _where_condition.push_back(col("").and());

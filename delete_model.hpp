@@ -65,11 +65,20 @@ public:
         return _table_name;
     }
 
-    virtual const string& str() override {
+    const string& str() override {
         _sql.clear();
         _sql.append("DELETE FROM ");
         _sql.append(_adapter->quote_field(_table_name));
-        _sql.append(where_str());
+        append_where();
+
+        return _sql;
+    }
+
+    const string& str(vector<string> & params) override {
+        _sql.clear();
+        _sql.append("DELETE FROM ");
+        _sql.append(_adapter->quote_field(_table_name));
+        append_where(params);
 
         return _sql;
     }
