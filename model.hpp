@@ -18,6 +18,12 @@ public:
         _adapter = adapter->shared_from_this();
     }
 
+    model(const model & m)
+    {
+        _adapter = m._adapter->shared_from_this();
+        _where_condition = m._where_condition;
+    }
+
     model(std::shared_ptr<adapter> adapter) : _adapter(adapter->shared_from_this()) {}
 
     virtual std::string where_str()
@@ -105,16 +111,12 @@ protected:
         _where_condition.clear();
     }
 
-private:
-    model(const model& m) = delete;
-    model& operator =(const model& data) = delete;
-
-private:
-    std::vector<col> _where_condition;
-
 protected:
     std::string _sql;
     std::shared_ptr<adapter> _adapter;
+
+private:
+    std::vector<col> _where_condition;
 };
 
 }

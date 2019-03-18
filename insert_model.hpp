@@ -3,6 +3,7 @@
 #include "model.hpp"
 
 #include <map>
+#include <functional>
 
 namespace boosql
 {
@@ -11,6 +12,7 @@ class insert_model : public model
 {
     class row_interface {
     public:
+        virtual void each(std::function<void(std::string, std::string)>) = 0;
         virtual const std::string & fields(adapter *) = 0;
         virtual const std::string & values(adapter *) = 0;
         virtual const std::string & values(adapter *, std::vector<std::string> &) = 0;
@@ -31,6 +33,13 @@ class insert_model : public model
         template <typename T>
         row& operator()(const std::string& c, const T& data) {
             return insert(c, data);
+        }
+
+        void each(std::function<void(std::string, std::string)> handle)
+        {
+            for (auto i = _data.begin(); i != _data.end(); ++i) {
+                handle(i->first, i->second);
+            }
         }
 
         insert_model & next_row() {
@@ -111,6 +120,19 @@ class insert_model : public model
 public:
     insert_model() {}
     insert_model(std::shared_ptr<adapter> adapter) : model(adapter) {}
+    insert_model(const insert_model & m) : model(m)
+    {
+        _replace = m._replace;
+        _table_name = m._table_name;
+        for (auto i = m._rows.begin(); i != m._rows.end(); ++i) {
+            row * r = new row(*this);
+            (*i)->each([&r](std::string field, std::string val) {
+                r->insert(field, val);
+            });
+            _rows.push_back(r);
+        }
+    }
+
     virtual ~insert_model()
     {
         auto i = _rows.begin();

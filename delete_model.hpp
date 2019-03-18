@@ -11,6 +11,10 @@ class delete_model : public model
 public:
     delete_model() {}
     delete_model(std::shared_ptr<adapter> adapter) : model(adapter) {}
+    delete_model(const delete_model & m) : model(m)
+    {
+        _table_name = m._table_name;
+    }
 
     virtual ~delete_model() {}
 

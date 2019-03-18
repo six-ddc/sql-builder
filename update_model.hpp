@@ -12,6 +12,12 @@ class update_model : public model
 public:
     update_model() {}
     update_model(std::shared_ptr<adapter> a) : model(a) {}
+    update_model(const update_model & m) : model(m)
+    {
+        _columns = m._columns;
+        _table_name = m._table_name;
+    }
+
     update_model& update(const std::string& table_name) {
         _table_name = table_name;
         return *this;

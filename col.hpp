@@ -32,6 +32,12 @@ public:
         table_name(tn);
     }
 
+    col(const col & c)
+    {
+        _items = c._items;
+        _table_name = c._table_name;
+    }
+
     virtual ~col() {}
 
     col & name(const std::string & c)

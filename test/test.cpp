@@ -42,11 +42,21 @@ int main()
     selector.left_join(group).on("hello")("=", col("a")).or_on("id")("=", col("b")).end();
 
     selector.group_by(col("hello")).order_by(col("hello")("DESC"));
+
+    select_model another(selector);
+
+    another.order_by(col("hello")("ASC"));
+
     std::cout << selector.str() << std::endl;
+    std::cout << another.str() << std::endl;
 
     update_model updater(a);
     updater.update("users")("hello", "hello")("world", "world").where(col("id") == 2);
+    update_model au(updater);
+    au("helloworld", "helloworld");
+
     std::cout << updater.str() << std::endl;
+    std::cout << au.str() << std::endl;
 
     delete_model deleter;
     // delete_model deleter(a);

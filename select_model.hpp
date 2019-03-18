@@ -58,7 +58,27 @@ class select_model : public model
 public:
     select_model() {}
     select_model(std::shared_ptr<adapter> adapter): model(adapter) {}
+    select_model(const select_model & m) : model(m)
+    {
+        _table_name = m._table_name;
+        for (auto i = m._joins.begin(); i != m._joins.end(); ++i) {
+            join_t join(*this, (*i).model);
+            join.ons = (*i).ons;
+            _joins.push_back(join);
+        }
+        _select = m._select;
+        _groupby_columns = m._groupby_columns;
+        _having_condition = m._having_condition;
+        _order_by = m._order_by;
+        _limit = m._limit;
+        _offset = m._offset;
+    }
+
     virtual ~select_model() {}
+
+    void copy_select(const select_model & m)
+    {
+    }
 
     template <typename... Args>
     select_model& select(const col& c, Args&&... columns) {
@@ -235,7 +255,7 @@ public:
             for (size_t i = 0; i < size; ++i) {
                 ret.append(_order_by[i].str(_adapter.get(), _table_name));
                 if(i < size - 1) {
-                    _sql.append(", ");
+                    ret.append(", ");
                 }
             }
         }
@@ -322,7 +342,7 @@ public:
     {
         std::string ret;
         auto size = _groupby_columns.size();
-        if(!_groupby_columns.empty()) {
+        if(size > 0) {
             ret.append(" GROUP BY ");
             for(size_t i = 0; i < size; ++i) {
                 ret.append(_groupby_columns[i].str(_adapter.get(), _table_name));
