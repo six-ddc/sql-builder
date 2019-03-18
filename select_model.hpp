@@ -21,7 +21,7 @@ class select_model : public model
         join_t & on(std::string main)
         {
             if (ons.size() > 0) {
-                ons.push_back(col().and());
+                ons.push_back(col().o_and());
             }
             ons.push_back(col(main, _selector.table_name()));
 
@@ -37,7 +37,7 @@ class select_model : public model
 
         join_t & or_on(std::string main)
         {
-            ons.push_back(col().or());
+            ons.push_back(col().o_or());
             ons.push_back(col(main, _selector.table_name()));
 
             return *this;

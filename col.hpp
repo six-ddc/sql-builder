@@ -20,7 +20,6 @@ class col
 public:
     col() {}
 
-
     col(const std::string & c)
     {
         name(c);
@@ -85,14 +84,14 @@ public:
     {
         size_t size = args.size();
         if(size == 1) {
-            _items.push_back(item<std::string>{other, "="});
-            ostringstream str;
+            _items.push_back(item{other, "="});
+	    std::ostringstream str;
             str << args[0];
-            _items.push_back(item<std::string>{value, str.str()});
+            _items.push_back(item{value, str.str()});
         } else {
-            _items.push_back(item<std::string>{other, in + " ("});
+            _items.push_back(item{other, in + " ("});
             for(size_t i = 0; i < size; ++i) {
-                ostringstream str;
+		std::ostringstream str;
                 str << args[i];
                 _items.push_back(item{value, str.str()});
                 if(i < size - 1) {
@@ -104,13 +103,13 @@ public:
         return *this;
     }
 
-    col & and()
+    col & o_and()
     {
         _items.push_back(item{other, "AND"});
         return *this;
     }
 
-    col & or()
+    col & o_or()
     {
         _items.push_back(item{other, "OR"});
         return *this;
@@ -158,7 +157,7 @@ public:
 
     col& operator &&(col & condition)
     {
-        and();
+        o_and();
         merge(condition);
 
         return *this;
@@ -166,7 +165,7 @@ public:
 
     col& operator ||(col& condition)
     {
-        or ();
+        o_or();
         merge(condition);
 
         return *this;

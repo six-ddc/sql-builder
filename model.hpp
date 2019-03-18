@@ -7,6 +7,7 @@
 #include <vector>
 #include <functional>
 
+
 namespace boosql
 {
 
@@ -74,28 +75,28 @@ protected:
 
     void and_where(const std::string & condition)
     {
-        _where_condition.push_back(col().and());
+        _where_condition.push_back(col().o_and());
         where(condition);
     }
     void and_where(const col & condition)
     {
-        _where_condition.push_back(col().and());
+        _where_condition.push_back(col().o_and());
         where(condition);
     }
     void or_where(const std::string & condition)
     {
-        _where_condition.push_back(col().or());
+        _where_condition.push_back(col().o_or());
         where(condition);
     }
     void or_where(const col & condition)
     {
-        _where_condition.push_back(col().or());
+        _where_condition.push_back(col().o_or());
         where(condition);
     }
     template <class T>
     void quote(std::function<void(T& model)> callback, T& model)
     {
-        _where_condition.push_back(col().and());
+        _where_condition.push_back(col().o_and());
         _where_condition.push_back(col().quote_begin());
         callback(model);
         _where_condition.push_back(col().quote_end());
