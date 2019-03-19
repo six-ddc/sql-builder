@@ -26,18 +26,18 @@ using namespace boosql;
 
 int main() 
 {
-    std::shared_ptr<sqlite_adapter> a = std::make_shared<sqlite_adapter>();
+    sqlite_adapter a;
 
-    select_model selector(a);
-    selector.from("users")
-        .select(col("*"))
+    select_model selector(&a, "users");
+
+    selector .select(col("*"))
         .where(boosql::col("hello")["%hello"])  // like
         .quote([](select_model & model) {
             model.where(col("id") != 1).or_where(col("id") != 2);
         });
-    select_model group(a);
+    select_model group(&a, "group");
 
-    group.from("group").select(col("a"), col("b"), col("c")).where(col("a") == 2);
+    group.select(col("a"), col("b"), col("c")).where(col("a") == 2);
 
     selector.left_join(group).on("hello")("=", col("a")).or_on("id")("=", col("b")).end();
 
@@ -50,21 +50,21 @@ int main()
     std::cout << selector.str() << std::endl;
     std::cout << another.str() << std::endl;
 
-    update_model updater(a);
-    updater.update("users")("hello", "hello")("world", "world").where(col("id") == 2);
+    update_model updater(&a, "users");
+    updater("hello", "hello")("world", "world").where(col("id") == 2);
     update_model au(updater);
     au("helloworld", "helloworld");
 
     std::cout << updater.str() << std::endl;
     std::cout << au.str() << std::endl;
 
-    delete_model deleter;
+    delete_model deleter(&a, "users");
     // delete_model deleter(a);
-    deleter.from("users").where(col("id") == 1).or_where(col("name")["%hello"]);
+    deleter.where(col("id") == 1).or_where(col("name")["%hello"]);
     std::cout << deleter.str() << std::endl;
 
-    insert_model insert(a);
-    insert.into("users")
+    insert_model insert(&a, "users");
+    insert
         ("id", 1)
         ("name", "hello")
     .next_row()

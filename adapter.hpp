@@ -11,6 +11,7 @@ public:
     virtual std::string quote_value(const std::string & value) = 0;
     virtual std::string quote_field(const std::string & field) = 0;
     virtual std::string placeholder() = 0;
+    virtual adapter * clone() = 0;
 };
 
 class sqlite_adapter : public adapter
@@ -29,6 +30,11 @@ public:
     std::string placeholder() override
     {
         return "?";
+    }
+
+    adapter * clone() override
+    {
+        return new sqlite_adapter();
     }
 };
 

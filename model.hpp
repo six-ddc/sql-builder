@@ -14,24 +14,44 @@ namespace boosql
 class model 
 {
 public:
-    model() {
-        auto adapter = std::make_shared<sqlite_adapter>();
-        _adapter = adapter->shared_from_this();
+    const std::string & table_name()
+    {
+        return _table_name;
+    }
+
+    model()
+    {
+        _adapter = new sqlite_adapter();
+        _auto_delete_adapter = true;
     }
 
     model(const model & m)
     {
-        _adapter = m._adapter->shared_from_this();
+        _adapter = m._adapter->clone();
+        _auto_delete_adapter = true;
+
         _where_condition = m._where_condition;
     }
 
-    model(std::shared_ptr<adapter> adapter) : _adapter(adapter->shared_from_this()) {}
+    model(adapter * adapter) : _adapter(adapter) {}
+
+    model(adapter * adapter, const std::string & table_name) 
+    : _adapter(adapter), _table_name(table_name)
+    {
+    }
+
+    model(const std::string & table_name)
+    {
+        _adapter = new sqlite_adapter();
+        _auto_delete_adapter = true;
+        _table_name = table_name;
+    }
 
     virtual std::string where_str()
     {
         std::string ret;
         for(auto i = _where_condition.begin(); i != _where_condition.end(); ++i) {
-            ret.append((*i).str(_adapter.get(), table_name()));
+            ret.append((*i).str(_adapter, table_name()));
         }
 
         return ret;
@@ -41,15 +61,19 @@ public:
     {
         std::string ret;
         for(auto i = _where_condition.begin(); i != _where_condition.end(); ++i) {
-            ret.append((*i).str(_adapter.get(), table_name(), params));
+            ret.append((*i).str(_adapter, table_name(), params));
         }
 
         return ret;
     }
 
-    virtual ~model() {}
+    virtual ~model()
+    {
+        if (_auto_delete_adapter) {
+            delete _adapter;
+        }
+    }
 
-    virtual const std::string & table_name() = 0;
     virtual const std::string& str() = 0;
     virtual const std::string& str(std::vector<std::string> &) = 0;
 
@@ -109,12 +133,15 @@ protected:
     }
     void reset()
     {
+        _table_name.clear();
         _where_condition.clear();
     }
 
 protected:
     std::string _sql;
-    std::shared_ptr<adapter> _adapter;
+    adapter * _adapter;
+    bool _auto_delete_adapter = false;
+    std::string _table_name;
 
 private:
     std::vector<col> _where_condition;

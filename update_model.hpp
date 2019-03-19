@@ -11,12 +11,18 @@ class update_model : public model
 {
 public:
     update_model() {}
-    update_model(std::shared_ptr<adapter> a) : model(a) {}
+    update_model(adapter * a) : model(a) {}
     update_model(const update_model & m) : model(m)
     {
         _columns = m._columns;
         _table_name = m._table_name;
     }
+    update_model(adapter * a, const std::string & table_name)
+    : model(a, table_name)
+    {}
+    update_model(const std::string & table_name)
+    : model(table_name)
+    {}
 
     update_model& update(const std::string& table_name) {
         _table_name = table_name;
@@ -74,11 +80,6 @@ public:
         return *this;
     }
 
-    virtual const std::string & table_name()
-    {
-        return _table_name;
-    }
-
     const std::string& str() override
     {
         _sql.clear();
@@ -87,7 +88,7 @@ public:
         _sql.append(" SET ");
         size_t size = _columns.size();
         for(size_t i = 0; i < size; ++i) {
-            _sql.append(_columns[i].str(_adapter.get(), table_name()));
+            _sql.append(_columns[i].str(_adapter, table_name()));
             if(i < size - 1) {
                 _sql.append(", ");
             }
@@ -105,7 +106,7 @@ public:
         _sql.append(" SET ");
         size_t size = _columns.size();
         for(size_t i = 0; i < size; ++i) {
-            _sql.append(_columns[i].str(_adapter.get(), table_name(), params));
+            _sql.append(_columns[i].str(_adapter, table_name(), params));
             if(i < size - 1) {
                 _sql.append(", ");
             }
@@ -117,7 +118,6 @@ public:
 
     update_model& reset() {
         model::reset();
-        _table_name.clear();
         _columns.clear();
         return *this;
     }

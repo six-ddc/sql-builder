@@ -10,11 +10,19 @@ class delete_model : public model
 {
 public:
     delete_model() {}
-    delete_model(std::shared_ptr<adapter> adapter) : model(adapter) {}
+    delete_model(adapter * a) : model(a) {}
     delete_model(const delete_model & m) : model(m)
     {
         _table_name = m._table_name;
     }
+
+    delete_model(adapter * a, const std::string & table_name)
+    : model(a, table_name)
+    {}
+
+    delete_model(const std::string & table_name)
+    : model(table_name)
+    {}
 
     virtual ~delete_model() {}
 
@@ -87,17 +95,14 @@ public:
     }
 
     delete_model& reset() {
-        _table_name.clear();
         model::reset();
         return *this;
     }
+
     friend inline std::ostream& operator<< (std::ostream& out, delete_model& mod) {
         out << mod.str();
         return out;
     }
-
-protected:
-    std::string _table_name;
 };
 
 }

@@ -57,7 +57,7 @@ class select_model : public model
     };
 public:
     select_model() {}
-    select_model(std::shared_ptr<adapter> adapter): model(adapter) {}
+    select_model(adapter * adapter): model(adapter) {}
     select_model(const select_model & m) : model(m)
     {
         _table_name = m._table_name;
@@ -73,6 +73,12 @@ public:
         _limit = m._limit;
         _offset = m._offset;
     }
+    select_model(adapter * adapter, const std::string & table_name) 
+    : model(adapter, table_name)
+    {}
+
+    select_model(const std::string & table_name) : model(table_name)
+    {}
 
     virtual ~select_model() {}
 
@@ -195,11 +201,6 @@ public:
         return *this;
     }
 
-    const std::string & table_name()
-    {
-        return _table_name;
-    }
-
     const std::string& str() override
     {
         _sql.clear();
@@ -253,7 +254,7 @@ public:
         if (size > 0) {
             ret.append(" ORDER BY ");
             for (size_t i = 0; i < size; ++i) {
-                ret.append(_order_by[i].str(_adapter.get(), _table_name));
+                ret.append(_order_by[i].str(_adapter, _table_name));
                 if(i < size - 1) {
                     ret.append(", ");
                 }
@@ -282,7 +283,7 @@ public:
             ret.append(" ON ");
             auto ons = (*i).ons;
             for (auto j = ons.begin(); j != ons.end(); ++j) {
-                ret.append((*j).str(_adapter.get()));
+                ret.append((*j).str(_adapter));
             }
         }
 
@@ -327,7 +328,7 @@ public:
         if(size > 0) {
             ret.append(" HAVING ");
             for(size_t i = 0; i < size; ++i) {
-                ret.append(_having_condition[i].str(_adapter.get(), _table_name));
+                ret.append(_having_condition[i].str(_adapter, _table_name));
                 if(i < size - 1) {
                     _sql.append(" ");
                 }
@@ -344,7 +345,7 @@ public:
         if(size > 0) {
             ret.append(" GROUP BY ");
             for(size_t i = 0; i < size; ++i) {
-                ret.append(_groupby_columns[i].str(_adapter.get(), _table_name));
+                ret.append(_groupby_columns[i].str(_adapter, _table_name));
                 if(i < size - 1) {
                     ret.append(", ");
                 }
@@ -361,7 +362,7 @@ public:
         int count = 0;
         for (auto i = _select.begin(); i != _select.end(); ++i) {
             count++;
-            ret.append((*i).str(_adapter.get(), _table_name));
+            ret.append((*i).str(_adapter, _table_name));
             if (count < _select.size()) {
                 ret.append(", ");
             }
@@ -376,7 +377,6 @@ public:
 
     select_model& reset() {
         model::reset();
-        _table_name.clear();
         _select.clear();
         _groupby_columns.clear();
         _having_condition.clear();
@@ -385,6 +385,7 @@ public:
         _offset.clear();
         return *this;
     }
+
     friend inline std::ostream& operator<< (std::ostream& out, select_model& mod) {
         out << mod.str();
         return out;
@@ -401,7 +402,6 @@ public:
     }
 
 private:
-    std::string _table_name;
     std::vector<join_t> _joins;
     std::vector<col> _select;
     std::vector<col> _groupby_columns;

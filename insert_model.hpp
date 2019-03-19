@@ -119,7 +119,7 @@ class insert_model : public model
 
 public:
     insert_model() {}
-    insert_model(std::shared_ptr<adapter> adapter) : model(adapter) {}
+    insert_model(adapter * a) : model(a) {}
     insert_model(const insert_model & m) : model(m)
     {
         _replace = m._replace;
@@ -132,6 +132,13 @@ public:
             _rows.push_back(r);
         }
     }
+    insert_model(adapter * a, const std::string & table_name)
+        : model(a, table_name)
+    {}
+
+    insert_model(const std::string & table_name)
+    : model(table_name)
+    {}
 
     virtual ~insert_model()
     {
@@ -164,11 +171,6 @@ public:
         return *this;
     }
 
-    const std::string & table_name() override
-    {
-        return _table_name;
-    }
-
     const std::string& str() override {
         _sql.clear();
         if (_replace) {
@@ -182,10 +184,10 @@ public:
         for (auto i = _rows.begin(); i != _rows.end(); ++i) {
             count++;
             if (count == 1) {
-                _sql.append((*i)->fields(_adapter.get()));
+                _sql.append((*i)->fields(_adapter));
                 _sql.append(" VALUES");
             }
-            _sql.append((*i)->values(_adapter.get()));
+            _sql.append((*i)->values(_adapter));
             if (count < size) {
                 _sql.append(", ");
             }
@@ -208,10 +210,10 @@ public:
         for (auto i = _rows.begin(); i != _rows.end(); ++i) {
             count++;
             if (count == 1) {
-                _sql.append((*i)->fields(_adapter.get()));
+                _sql.append((*i)->fields(_adapter));
                 _sql.append(" VALUES");
             }
-            _sql.append((*i)->values(_adapter.get(), params));
+            _sql.append((*i)->values(_adapter, params));
             if (count < size) {
                 _sql.append(", ");
             }
@@ -233,7 +235,6 @@ public:
 
 protected:
     bool _replace = false;
-    std::string _table_name;
     std::vector<row_interface *> _rows;
 };
 
