@@ -293,11 +293,10 @@ public:
     {
         std::string ret = model::where_str();
         for (auto i = _joins.begin(); i != _joins.end(); ++i) {
-            if (ret.length() > 0) {
-                ret.append(" AND ");
-            }
             auto s = (*i).model.where_str();
-            if (s.length() > 0) {
+            if (ret.length() > 0 && s.length() > 0) {
+                ret.append(" AND (" + s + ")");
+            } else if (s.length() > 0) {
                 ret.append("(" + s + ")");
             }
         }
