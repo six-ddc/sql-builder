@@ -60,7 +60,6 @@ public:
     select_model(adapter * adapter): model(adapter) {}
     select_model(const select_model & m) : model(m)
     {
-        _table_name = m._table_name;
         for (auto i = m._joins.begin(); i != m._joins.end(); ++i) {
             join_t join(*this, (*i).model);
             join.ons = (*i).ons;
@@ -279,7 +278,7 @@ public:
                 ret.append(" INNER");
                 break;
             }
-            ret.append(" JOIN " + (*i).model.table_name());
+            ret.append(" JOIN " + _adapter->quote_field((*i).model.table_name()));
             ret.append(" ON ");
             auto ons = (*i).ons;
             for (auto j = ons.begin(); j != ons.end(); ++j) {

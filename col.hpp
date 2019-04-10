@@ -9,15 +9,14 @@ namespace boosql
 
 class col
 {
-    typedef enum {field, value, other} witch;
-
+public:
+    enum witch {field, value, other};
     struct item {
     public:
         witch type;
         std::string val;
     };
 
-public:
     col() {}
 
     col(const std::string & c)
@@ -176,6 +175,16 @@ public:
         for (auto i = condition._items.begin(); i != condition._items.end(); ++i) {
             _items.push_back(*i);
         }
+    }
+
+    bool empty()
+    {
+        return _items.empty();
+    }
+
+    const item & last()
+    {
+        return _items.back();
     }
 
     col& operator &&(const std::string& condition)

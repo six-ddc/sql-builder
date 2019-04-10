@@ -30,6 +30,7 @@ public:
         _adapter = m._adapter->clone();
         _auto_delete_adapter = true;
 
+        _table_name = m._table_name;
         _where_condition = m._where_condition;
     }
 
@@ -100,35 +101,47 @@ protected:
     void and_where(const std::string & condition)
     {
         _where_condition.push_back(col().o_and());
-        where(condition);
+        _where_condition.push_back(col()(condition));
     }
     void and_where(const col & condition)
     {
         _where_condition.push_back(col().o_and());
-        where(condition);
+        _where_condition.push_back(condition);
     }
     void or_where(const std::string & condition)
     {
         _where_condition.push_back(col().o_or());
-        where(condition);
+        _where_condition.push_back(col()(condition));
     }
     void or_where(const col & condition)
     {
         _where_condition.push_back(col().o_or());
-        where(condition);
+        _where_condition.push_back(condition);
     }
     template <class T>
     void quote(std::function<void(T& model)> callback, T& model)
     {
-        _where_condition.push_back(col().o_and());
+        if (_where_condition.size() > 0) {
+            _where_condition.push_back(col().o_and());
+        }
         _where_condition.push_back(col().quote_begin());
         callback(model);
         _where_condition.push_back(col().quote_end());
     }
     void where(const std::string& condition) {
+        if (_where_condition.size() > 0) {
+            _where_condition.push_back(col().o_and());
+        }
         _where_condition.push_back(col()(condition));
     }
     void where(const col& condition) {
+        int s = _where_condition.size();
+        if (s > 0) {
+            col last = _where_condition.back();
+            if (!last.empty() && last.last().val != "(") {
+                _where_condition.push_back(col().o_and());
+            }
+        }
         _where_condition.push_back(condition);
     }
     void reset()

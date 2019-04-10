@@ -24,12 +24,10 @@ create table if not exists user (
 
 using namespace boosql;
 
-int main() 
+void test_select_join()
 {
     sqlite_adapter a;
-
     select_model selector(&a, "users");
-
     selector .select(col("*"))
         .where(boosql::col("hello")["%hello"])  // like
         .quote([](select_model & model) {
@@ -49,7 +47,26 @@ int main()
 
     std::cout << selector.str() << std::endl;
     std::cout << another.str() << std::endl;
+}
 
+void test_select_where()
+{
+    sqlite_adapter a;
+    select_model s(&a, "users");
+    s.select(col()("*"))
+        .where(col("hello") == "hello")
+        .where(col("world") == "world")
+        .or_where(col("hw") == "hw")
+        .quote([](select_model & s) {
+            s.where(col("a") != "1")
+                .or_where(col("b") == "1");
+        });
+    std::cout << s.str() << std::endl;
+}
+
+void test_update()
+{
+    sqlite_adapter a;
     update_model updater(&a, "users");
     updater("hello", "hello")("world", "world").where(col("id") == 2);
     update_model au(updater);
@@ -57,12 +74,20 @@ int main()
 
     std::cout << updater.str() << std::endl;
     std::cout << au.str() << std::endl;
+}
 
+void test_delete()
+{
+    sqlite_adapter a;
     delete_model deleter(&a, "users");
     // delete_model deleter(a);
     deleter.where(col("id") == 1).or_where(col("name")["%hello"]);
     std::cout << deleter.str() << std::endl;
+}
 
+void test_insert()
+{
+    sqlite_adapter a;
     insert_model insert(&a, "users");
     insert
         ("id", 1)
@@ -72,6 +97,10 @@ int main()
         ("name", "world");
 
     std::cout << insert.str() << std::endl;
+}
 
+int main() 
+{
+    test_select_where();
     return 0;
 }
