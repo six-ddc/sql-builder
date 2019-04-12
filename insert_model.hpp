@@ -53,7 +53,7 @@ class insert_model : public model
             }
             _fields = "(";
             auto size = _data.size();
-            int count = 0;
+            unsigned count = 0;
             for (auto i = _data.begin(); i != _data.end(); ++i) {
                 count++;
                 _fields.append(col(i->first).str(adapter));
@@ -74,7 +74,7 @@ class insert_model : public model
             }
             _values = "(";
             auto size = _data.size();
-            int count = 0;
+            unsigned count = 0;
             for (auto i = _data.begin(); i != _data.end(); ++i) {
                 count++;
                 _values.append(adapter->quote_value(i->second));
@@ -95,7 +95,7 @@ class insert_model : public model
             }
             _values = "(";
             auto size = _data.size();
-            int count = 0;
+            unsigned count = 0;
             for (auto i = _data.begin(); i != _data.end(); ++i) {
                 count++;
                 _values.append(adapter->placeholder());
@@ -180,7 +180,7 @@ public:
         }
         _sql.append(_adapter->quote_field(_table_name));
         auto size = _rows.size();
-        int count = 0;
+        unsigned count = 0;
         for (auto i = _rows.begin(); i != _rows.end(); ++i) {
             count++;
             if (count == 1) {
@@ -206,7 +206,7 @@ public:
         }
         _sql.append(_adapter->quote_field(_table_name));
         auto size = _rows.size();
-        int count = 0;
+        unsigned count = 0;
         for (auto i = _rows.begin(); i != _rows.end(); ++i) {
             count++;
             if (count == 1) {

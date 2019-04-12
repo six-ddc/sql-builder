@@ -64,6 +64,21 @@ void test_select_where()
     std::cout << s.str() << std::endl;
 }
 
+void test_select_from_select()
+{
+    sqlite_adapter a;
+    select_model from(&a, "users");
+    from.select(col("a"), col("b"))
+        .where(col("a") == 0)
+        .order_by(col("b")("ASC"));
+
+    select_model s(&a);
+    s.from(from)
+        .select(col("a"), col("b"));
+
+    std::cout << s.str() << std::endl;
+}
+
 void test_update()
 {
     sqlite_adapter a;
@@ -101,6 +116,6 @@ void test_insert()
 
 int main() 
 {
-    test_select_where();
+    test_select_from_select();
     return 0;
 }

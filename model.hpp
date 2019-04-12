@@ -144,6 +144,7 @@ protected:
         }
         _where_condition.push_back(condition);
     }
+
     void reset()
     {
         _table_name.clear();

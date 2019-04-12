@@ -20,25 +20,37 @@ class select_model : public model
 
         join_t & on(std::string main)
         {
+            return on(main, _selector.table_ref());
+        }
+
+        join_t & on(std::string main, std::string table_name)
+        {
             if (ons.size() > 0) {
                 ons.push_back(col().o_and());
             }
-            ons.push_back(col(main, _selector.table_name()));
+
+            ons.push_back(col(main, table_name));
 
             return *this;
         }
+
         join_t & operator () (std::string oper, col second)
         {
             ons.push_back(col()(oper));
-            ons.push_back(second.table_name(model.table_name()));
+            ons.push_back(second.table_name(model.table_ref()));
 
             return *this;
         }
 
         join_t & or_on(std::string main)
         {
+            return or_on(main, _selector.table_ref());
+        }
+
+        join_t & or_on(std::string main, std::string table_name)
+        {
             ons.push_back(col().o_or());
-            ons.push_back(col(main, _selector.table_name()));
+            ons.push_back(col(main, table_name));
 
             return *this;
         }
@@ -97,11 +109,19 @@ public:
         return *this;
     }
 
-    select_model& from(const std::string& table_name) {
+    select_model& from(const std::string& table_name)
+    {
         _table_name = table_name;
         return *this;
     }
     
+    select_model & from(select_model & m)
+    {
+        _from_model = &m;
+        _is_from_model = true;
+        return *this;
+    }
+
     select_model& and_where(const std::string & condition)
     {
         model::and_where(condition);
@@ -200,13 +220,38 @@ public:
         return *this;
     }
 
+    std::string table_str()
+    {
+        if (_is_from_model) {
+            return "(" + _from_model->str() + ") __m__";
+        }
+        return _table_name;
+    }
+
+    std::string table_ref()
+    {
+        if (_is_from_model) {
+            return "__m__";
+        }
+
+        return _table_name;
+    }
+
+    std::string table_str(std::vector<std::string> & p)
+    {
+        if (_is_from_model) {
+            return "(" + _from_model->str(p) + ") __m__";
+        }
+        return _table_name;
+    }
+
     const std::string& str() override
     {
         _sql.clear();
         _sql.append("SELECT ");
         _sql.append(select_str());
         _sql.append(" FROM ");
-        _sql.append(_table_name);
+        _sql.append(table_str());
         _sql.append(join_str());
         append_where();
         _sql.append(group_by_str());
@@ -229,7 +274,7 @@ public:
         _sql.append("SELECT ");
         _sql.append(select_str());
         _sql.append(" FROM ");
-        _sql.append(_table_name);
+        _sql.append(table_str(params));
         _sql.append(join_str());
         append_where(params);
         _sql.append(group_by_str());
@@ -253,7 +298,7 @@ public:
         if (size > 0) {
             ret.append(" ORDER BY ");
             for (size_t i = 0; i < size; ++i) {
-                ret.append(_order_by[i].str(_adapter, _table_name));
+                ret.append(_order_by[i].str(_adapter, table_ref()));
                 if(i < size - 1) {
                     ret.append(", ");
                 }
@@ -327,7 +372,7 @@ public:
         if(size > 0) {
             ret.append(" HAVING ");
             for(size_t i = 0; i < size; ++i) {
-                ret.append(_having_condition[i].str(_adapter, _table_name));
+                ret.append(_having_condition[i].str(_adapter, table_ref()));
                 if(i < size - 1) {
                     _sql.append(" ");
                 }
@@ -344,7 +389,7 @@ public:
         if(size > 0) {
             ret.append(" GROUP BY ");
             for(size_t i = 0; i < size; ++i) {
-                ret.append(_groupby_columns[i].str(_adapter, _table_name));
+                ret.append(_groupby_columns[i].str(_adapter, table_ref()));
                 if(i < size - 1) {
                     ret.append(", ");
                 }
@@ -358,16 +403,18 @@ public:
     std::string select_str()
     {
         std::string ret = "";
-        int count = 0;
+        unsigned count = 0;
         for (auto i = _select.begin(); i != _select.end(); ++i) {
             count++;
-            ret.append((*i).str(_adapter, _table_name));
+            ret.append((*i).str(_adapter, table_ref()));
             if (count < _select.size()) {
                 ret.append(", ");
             }
         }
         for (auto i = _joins.begin(); i != _joins.end(); ++i) {
-            ret.append(", ");
+            if (ret.length() > 0) {
+                ret.append(", ");
+            }
             ret.append((*i).model.select_str());
         }
 
@@ -408,6 +455,9 @@ private:
     std::vector<col> _order_by;
     std::string _limit;
     std::string _offset;
+    bool _is_from_model = false;
+
+    select_model * _from_model;
 };
 
 }
