@@ -4,17 +4,25 @@ set(CMAKE_MACOSX_RPATH 0)
 
 project(sql-builder)
 
-set(DEBUG_FLAGS "-std=c++11 -g -O1 -Wall -Wextra -pedantic")
-set(RELEASE_FLAGS "-std=c++11 -O3 -Wall -Wextra -pedantic")
+# set(DEBUG_FLAGS "-std=c++11 -g -O1 -Wall -Wextra -pedantic")
+# set(RELEASE_FLAGS "-std=c++11 -O3 -Wall -Wextra -pedantic")
 
 set(CMAKE_CXX_FLAGS ${RELEASE_FLAGS})
 set(CMAKE_CXX_FLAGS_DEBUG ${DEBUG_FLAGS})
 set(CMAKE_CONFIGURATION_TYPES Debug Release)
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_CURRENT_BINARY_DIR})
 
-include_directories(sql-test "../")
+include_directories(.)
 
-set(SQL_TEST_SRC test.cpp)
+set(SQL_TEST_SRC test/test.cpp
+    adapter.hpp
+    col.hpp 
+    insert_model.hpp 
+    delete_model.hpp
+    model.hpp
+    select_model.hpp
+    update_model.hpp)
+
 add_executable(sql-test ${SQL_TEST_SRC})
 
 add_test(all "sql-test")

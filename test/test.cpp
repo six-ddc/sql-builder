@@ -1,7 +1,12 @@
 #include <iostream>
 #include <sstream>
 
-#include "sql.h"
+#include "col.hpp"
+#include "select_model.hpp"
+#include "update_model.hpp"
+#include "delete_model.hpp"
+#include "insert_model.hpp"
+#include "adapter.hpp"
 
 /*
 
@@ -17,49 +22,100 @@ create table if not exists user (
 
 */
 
-using namespace sql;
+using namespace boosql;
+
+void test_select_join()
+{
+    sqlite_adapter a;
+    select_model selector(&a, "users");
+    selector .select(col("*"))
+        .where(boosql::col("hello")["%hello"])  // like
+        .quote([](select_model & model) {
+            model.where(col("id") != 1).or_where(col("id") != 2);
+        });
+    select_model group(&a, "group");
+
+    group.select(col("a"), col("b"), col("c")).where(col("a") == 2);
+
+    selector.left_join(group).on("hello")("=", col("a")).or_on("id")("=", col("b")).end();
+
+    selector.group_by(col("hello")).order_by(col("hello")("DESC"));
+
+    select_model another(selector);
+
+    another.order_by(col("hello")("ASC"));
+
+    std::cout << selector.str() << std::endl;
+    std::cout << another.str() << std::endl;
+}
+
+void test_select_where()
+{
+    sqlite_adapter a;
+    select_model s(&a, "users");
+    s.select(col()("*"))
+        .where(col("hello") == "hello")
+        .where(col("world") == "world")
+        .or_where(col("hw") == "hw")
+        .quote([](select_model & s) {
+            s.where(col("a") != "1")
+                .or_where(col("b") == "1");
+        });
+    std::cout << s.str() << std::endl;
+}
+
+void test_select_from_select()
+{
+    sqlite_adapter a;
+    select_model from(&a, "users");
+    from.select(col("a"), col("b"))
+        .where(col("a") == 0)
+        .order_by(col("b")("ASC"));
+
+    select_model s(&a);
+    s.from(from)
+        .select(col("a"), col("b"));
+
+    std::cout << s.str() << std::endl;
+}
+
+void test_update()
+{
+    sqlite_adapter a;
+    update_model updater(&a, "users");
+    updater("hello", "hello")("world", "world").where(col("id") == 2);
+    update_model au(updater);
+    au("helloworld", "helloworld");
+
+    std::cout << updater.str() << std::endl;
+    std::cout << au.str() << std::endl;
+}
+
+void test_delete()
+{
+    sqlite_adapter a;
+    delete_model deleter(&a, "users");
+    // delete_model deleter(a);
+    deleter.where(col("id") == 1).or_where(col("name")["%hello"]);
+    std::cout << deleter.str() << std::endl;
+}
+
+void test_insert()
+{
+    sqlite_adapter a;
+    insert_model insert(&a, "users");
+    insert
+        ("id", 1)
+        ("name", "hello")
+    .next_row()
+        ("id", 2)
+        ("name", "world");
+
+    std::cout << insert.str() << std::endl;
+}
 
 int main() 
 {
-    InsertModel i;
-    i.insert("score", 100)
-        ("name", std::string("six"))
-        ("age", (unsigned char)20)
-        ("address", "beijing")
-        ("create_time", nullptr)
-        .into("user");
-    std::cout<<i.str()<<std::endl;
-    // insert into user(score, name, age, address, create_time) values(100, 'six', 20, 'beijing', '2016-03-25 10:15:59')
-
-    SelectModel s;
-    s.select("id", "age", "name", "address")
-        .from("user")
-        .where(column("score") > 60 and (column("age") >= 20 or column("address").is_not_null()))
-        .group_by("age")
-        .having(column("age") > 10)
-        .order_by("age desc")
-        .limit(10)
-        .offset(1);
-    std::cout<<s<<std::endl;
-    // select id, age, name, address from user where (score > 60) and ((age >= 20) or (address is not null)) group by age having age > 10 order by age desc limit 10 offset 1
-
-    std::vector<int> a = {1, 2, 3};
-    UpdateModel u;
-    u.update("user")
-        .set("name", "ddc")
-        ("age", 18)
-        ("score", nullptr)
-        ("address", "beijing")
-        .where(column("id").in(a));
-    std::cout<<u<<std::endl;
-    // update user set name = 'ddc', age = 18, score = 18, address = 'beijing' where id in (1, 2, 3)
-
-    DeleteModel d;
-    d._delete()
-        .from("user")
-        .where(column("id") == 1);
-    std::cout<<d<<std::endl;
-    // delete from user where id = 1
-
+    test_select_from_select();
     return 0;
 }
