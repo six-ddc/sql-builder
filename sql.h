@@ -6,6 +6,20 @@
 
 namespace sql {
 
+class Param
+{
+public:
+    Param (const std::string &param) : m_param(param) {}
+    Param (const char *param) : m_param(param) {}
+
+public:
+    std::string operator()() const { return param(); }
+    inline std::string param() const { return m_param; }
+
+private:
+    const std::string m_param;
+};
+
 template <typename T>
 inline std::string to_value(const T& data) {
     return std::to_string(data);
@@ -33,6 +47,11 @@ inline std::string to_value<const char*>(const char* const& data) {
     str.append(data);
     str.append("'");
     return str;
+}
+
+template <>
+inline std::string to_value<Param>(const Param& data) {
+    return data();
 }
 
 /*
