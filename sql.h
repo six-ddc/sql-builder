@@ -2,9 +2,10 @@
 
 #include <vector>
 #include <string>
-#include <map>
 
 namespace sql {
+
+class column;
 
 class Param
 {
@@ -54,6 +55,8 @@ inline std::string to_value<Param>(const Param& data) {
     return data();
 }
 
+inline std::string to_value<column>(const column& data);
+
 /*
 template <>
 static std::string sql::to_value<time_t>(const time_t& data) {
@@ -66,6 +69,19 @@ static std::string sql::to_value<time_t>(const time_t& data) {
     return str;
 }
 */
+
+template <typename T>
+void join_vector(std::string& result, const std::vector<T>& vec, const char* sep) {
+    size_t size = vec.size();
+    for(size_t i = 0; i < size; ++i) {
+        if(i < size - 1) {
+            result.append(vec[i]);
+            result.append(sep);
+        } else {
+            result.append(vec[i]);
+        }
+    }
+}
 
 class column
 {
@@ -230,6 +246,11 @@ private:
     std::string _cond;
 };
 
+template <>
+inline std::string to_value<column>(const column& data) {
+    return data.str();
+}
+
 
 class SqlModel 
 {
@@ -251,7 +272,7 @@ protected:
 class SelectModel : public SqlModel
 {
 public:
-    SelectModel() {}
+    SelectModel() : _distinct(false) {}
     virtual ~SelectModel() {}
 
     template <typename... Args>
@@ -263,6 +284,11 @@ public:
 
     // for recursion
     SelectModel& select() {
+        return *this;
+    }
+
+    SelectModel& distinct() {
+        _distinct = true;
         return *this;
     }
 
@@ -283,12 +309,64 @@ public:
         return *this;
     }
 
+    SelectModel& join(const std::string& table_name) {
+        _join_type = "join";
+        _join_table = table_name;
+        return *this;
+    }
+
+    SelectModel& left_join(const std::string& table_name) {
+        _join_type = "left join";
+        _join_table = table_name;
+        return *this;
+    }
+
+    SelectModel& left_outer_join(const std::string& table_name) {
+        _join_type = "left outer join";
+        _join_table = table_name;
+        return *this;
+    }
+
+    SelectModel& right_join(const std::string& table_name) {
+        _join_type = "right join";
+        _join_table = table_name;
+        return *this;
+    }
+
+    SelectModel& right_outer_join(const std::string& table_name) {
+        _join_type = "right outer join";
+        _join_table = table_name;
+        return *this;
+    }
+
+    SelectModel& full_join(const std::string& table_name) {
+        _join_type = "full join";
+        _join_table = table_name;
+        return *this;
+    }
+
+    SelectModel& full_outer_join(const std::string& table_name) {
+        _join_type = "full outer join";
+        _join_table = table_name;
+        return *this;
+    }
+
+    SelectModel& on(const std::string& condition) {
+        _join_on_condition.push_back(condition);
+        return *this;
+    }
+
+    SelectModel& on(const column& condition) {
+        _join_on_condition.push_back(condition.str());
+        return *this;
+    }
+
     SelectModel& where(const std::string& condition) {
         _where_condition.push_back(condition);
         return *this;
     }
 
-    SelectModel& where(column& condition) {
+    SelectModel& where(const column& condition) {
         _where_condition.push_back(condition.str());
         return *this;
     }
@@ -310,7 +388,7 @@ public:
         return *this;
     }
 
-    SelectModel& having(column& condition) {
+    SelectModel& having(const column& condition) {
         _having_condition.push_back(condition.str());
         return *this;
     }
@@ -340,52 +418,33 @@ public:
     virtual const std::string& str() override {
         _sql.clear();
         _sql.append("select ");
-        size_t size = _select_columns.size();
-        for(size_t i = 0; i < size; ++i) {
-            if(i < size - 1) {
-                _sql.append(_select_columns[i]);
-                _sql.append(", ");
-            } else {
-                _sql.append(_select_columns[i]);
-            }
+        if(_distinct) {
+            _sql.append("distinct ");
         }
+        join_vector(_sql, _select_columns, ", ");
         _sql.append(" from ");
         _sql.append(_table_name);
-        size = _where_condition.size();
-        if(size > 0) {
-            _sql.append(" where ");
-            for(size_t i = 0; i < size; ++i) {
-                if(i < size - 1) {
-                    _sql.append(_where_condition[i]);
-                    _sql.append(" ");
-                } else {
-                    _sql.append(_where_condition[i]);
-                }
-            }
+        if(!_join_type.empty()) {
+            _sql.append(" ");
+            _sql.append(_join_type);
+            _sql.append(" ");
+            _sql.append(_join_table);
         }
-        size = _groupby_columns.size();
+        if(!_join_on_condition.empty()) {
+            _sql.append(" on ");
+            join_vector(_sql, _join_on_condition, " and ");
+        }
+        if(!_where_condition.empty()) {
+            _sql.append(" where ");
+            join_vector(_sql, _where_condition, " and ");
+        }
         if(!_groupby_columns.empty()) {
             _sql.append(" group by ");
-            for(size_t i = 0; i < size; ++i) {
-                if(i < size - 1) {
-                    _sql.append(_groupby_columns[i]);
-                    _sql.append(", ");
-                } else {
-                    _sql.append(_groupby_columns[i]);
-                }
-            }
+            join_vector(_sql, _groupby_columns, ", ");
         }
-        size = _having_condition.size();
-        if(size > 0) {
+        if(!_having_condition.empty()) {
             _sql.append(" having ");
-            for(size_t i = 0; i < size; ++i) {
-                if(i < size - 1) {
-                    _sql.append(_having_condition[i]);
-                    _sql.append(" ");
-                } else {
-                    _sql.append(_having_condition[i]);
-                }
-            }
+            join_vector(_sql, _having_condition, " and ");
         }
         if(!_order_by.empty()) {
             _sql.append(" order by ");
@@ -403,9 +462,13 @@ public:
     }
 
     SelectModel& reset() {
-        _table_name.clear();
         _select_columns.clear();
+        _distinct = false;
         _groupby_columns.clear();
+        _table_name.clear();
+        _join_type.clear();
+        _join_table.clear();
+        _join_on_condition.clear();
         _where_condition.clear();
         _having_condition.clear();
         _order_by.clear();
@@ -420,8 +483,12 @@ public:
 
 protected:
     std::vector<std::string> _select_columns;
+    bool _distinct;
     std::vector<std::string> _groupby_columns;
     std::string _table_name;
+    std::string _join_type;
+    std::string _join_table;
+    std::vector<std::string> _join_on_condition;
     std::vector<std::string> _where_condition;
     std::vector<std::string> _having_condition;
     std::string _order_by;
@@ -547,7 +614,7 @@ public:
         return *this;
     }
 
-    UpdateModel& where(column& condition) {
+    UpdateModel& where(const column& condition) {
         _where_condition.push_back(condition.str());
         return *this;
     }
@@ -557,26 +624,11 @@ public:
         _sql.append("update ");
         _sql.append(_table_name);
         _sql.append(" set ");
-        size_t size = _set_columns.size();
-        for(size_t i = 0; i < size; ++i) {
-            if(i < size - 1) {
-                _sql.append(_set_columns[i]);
-                _sql.append(", ");
-            } else {
-                _sql.append(_set_columns[i]);
-            }
-        }
-        size = _where_condition.size();
+        join_vector(_sql, _set_columns, ", ");
+        size_t size = _where_condition.size();
         if(size > 0) {
             _sql.append(" where ");
-            for(size_t i = 0; i < size; ++i) {
-                if(i < size - 1) {
-                    _sql.append(_where_condition[i]);
-                    _sql.append(" ");
-                } else {
-                    _sql.append(_where_condition[i]);
-                }
-            }
+            join_vector(_sql, _where_condition, " and ");
         }
         return _sql;
     }
@@ -639,7 +691,7 @@ public:
         return *this;
     }
 
-    DeleteModel& where(column& condition) {
+    DeleteModel& where(const column& condition) {
         _where_condition.push_back(condition.str());
         return *this;
     }
@@ -651,14 +703,7 @@ public:
         size_t size = _where_condition.size();
         if(size > 0) {
             _sql.append(" where ");
-            for(size_t i = 0; i < size; ++i) {
-                if(i < size - 1) {
-                    _sql.append(_where_condition[i]);
-                    _sql.append(" ");
-                } else {
-                    _sql.append(_where_condition[i]);
-                }
-            }
+            join_vector(_sql, _where_condition, " and ");
         }
         return _sql;
     }
