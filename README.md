@@ -7,8 +7,6 @@
 ## Examples:
 
 ``` c++
-    using namespace sql;
-
     InsertModel i;
     i.insert("score", 100)
             ("name", std::string("six"))
@@ -21,7 +19,10 @@
 
     SelectModel s;
     s.select("id", "age", "name", "address")
+        .distinct()
         .from("user")
+        .join("score")
+        .on(column("user.id") == column("score.id") and column("score.id") > 60)
         .where(column("score") > 60 and (column("age") >= 20 or column("address").is_not_null()))
         // .where(column("score") > 60 && (column("age") >= 20 || column("address").is_not_null()))
         .group_by("age")
@@ -29,8 +30,9 @@
         .order_by("age desc")
         .limit(10)
         .offset(1);
+    std::cout << s.str() << std::endl;
     assert(s.str() ==
-            "select id, age, name, address from user where (score > 60) and ((age >= 20) or (address is not null)) group by age having age > 10 order by age desc limit 10 offset 1");
+            "select distinct id, age, name, address from user join score on (user.id = score.id) and (score.id > 60) where (score > 60) and ((age >= 20) or (address is not null)) group by age having age > 10 order by age desc limit 10 offset 1");
 
     std::vector<int> a = {1, 2, 3};
     UpdateModel u;
