@@ -1,9 +1,7 @@
 #pragma once
 
-#include <functional>
 #include <vector>
 #include <string>
-#include <map>
 
 namespace sql {
 
