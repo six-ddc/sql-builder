@@ -34,25 +34,24 @@ int main()
             "insert into user(score, name, age, address, create_time) values(100, 'six', 20, 'beijing', null)");
 
     // Insert with named parameters
+    InsertModel iP;
     Param score = ":score";
     Param name = ":name";
     Param age = ":age";
     Param address = ":address";
     Param create_time = ":create_time";
-    InsertModel i;
-    i.insert("score", score)
+    iP.insert("score", score)
             ("name", name)
             ("age", age)
             ("address", address)
             ("create_time", create_time)
         .into("user");
-    std::cout << i.str() << std::endl;
-    assert(i.str() ==
+    assert(iP.str() ==
             "insert into user(score, name, age, address, create_time) values(:score, :name, :age, :address, :create_time)");
 
     // Select
     SelectModel s;
-    s.select("id", "age", "name", "address")
+    s.select("id as user_id", "age", "name", "address")
         .distinct()
         .from("user")
         .join("score")
@@ -64,9 +63,8 @@ int main()
         .order_by("age desc")
         .limit(10)
         .offset(1);
-    std::cout << s.str() << std::endl;
     assert(s.str() ==
-            "select distinct id, age, name, address from user join score on (user.id = score.id) and (score.id > 60) where (score > 60) and ((age >= 20) or (address is not null)) group by age having age > 10 order by age desc limit 10 offset 1");
+            "select distinct id as user_id, age, name, address from user join score on (user.id = score.id) and (score.id > 60) where (score > 60) and ((age >= 20) or (address is not null)) group by age having age > 10 order by age desc limit 10 offset 1");
 
     // Update
     std::vector<int> a = {1, 2, 3};
@@ -81,16 +79,15 @@ int main()
             "update user set name = 'ddc', age = 18, score = null, address = 'beijing' where id in (1, 2, 3)");
 
     // Update with positional parameters
+    UpdateModel uP;
     Param mark = "?";
-    std::vector<int> a = {1, 2, 3};
-    UpdateModel u;
-    u.update("user")
+    uP.update("user")
         .set("name", mark)
             ("age", mark)
             ("score", mark)
             ("address", mark)
         .where(column("id").in(a));
-    assert(u.str() ==
+    assert(uP.str() ==
             "update user set name = ?, age = ?, score = ?, address = ? where id in (1, 2, 3)");
 
     // Delete

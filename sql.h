@@ -55,6 +55,7 @@ inline std::string to_value<Param>(const Param& data) {
     return data();
 }
 
+template <>
 inline std::string to_value<column>(const column& data);
 
 /*
