@@ -10,15 +10,15 @@ class column;
 class Param
 {
 public:
-    Param (const std::string &param) : m_param(param) {}
-    Param (const char *param) : m_param(param) {}
+    Param (const std::string &param) : _param(param) {}
+    Param (const char *param) : _param(param) {}
 
 public:
     std::string operator()() const { return param(); }
-    inline std::string param() const { return m_param; }
+    inline std::string param() const { return _param; }
 
 private:
-    const std::string m_param;
+    const std::string _param;
 };
 
 template <typename T>
