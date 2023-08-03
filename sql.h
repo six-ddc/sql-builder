@@ -259,6 +259,7 @@ namespace sql {
     {
     public:
         SqlModel() {}
+        SqlModel(std::string table): _table_name(table) {}
         virtual ~SqlModel() {}
 
         virtual operator std::string() = 0;
@@ -274,6 +275,8 @@ namespace sql {
         SqlModel& operator =(const SqlModel& data) = delete;
     protected:
         std::string _sql;
+        std::vector<std::string> _where_condition;
+        std::string _table_name;
     };
 
     class SelectModel : public SqlModel
@@ -492,11 +495,9 @@ namespace sql {
         std::vector<std::string> _select_columns;
         bool _distinct;
         std::vector<std::string> _groupby_columns;
-        std::string _table_name;
         std::string _join_type;
         std::string _join_table;
         std::vector<std::string> _join_on_condition;
-        std::vector<std::string> _where_condition;
         std::vector<std::string> _having_condition;
         std::string _order_by;
         std::string _limit;
@@ -504,11 +505,11 @@ namespace sql {
     };
 
 
-
     class InsertModel : public SqlModel
     {
     public:
         InsertModel() {}
+        InsertModel(std::string targetTable):SqlModel(targetTable){}
         virtual ~InsertModel() {}
 
         template <typename T>
@@ -525,6 +526,12 @@ namespace sql {
 
         InsertModel& into(const std::string& table_name) {
             _table_name = table_name;
+            return *this;
+        }
+
+        InsertModel& set_default(const std::string& column) {
+            _columns.push_back(column);
+            _values.push_back("DEFAULT");
             return *this;
         }
 
@@ -573,8 +580,14 @@ namespace sql {
             return _sql;
         }
 
-        InsertModel& reset() {
+        InsertModel& clear() {
             _table_name.clear();
+            _columns.clear();
+            _values.clear();
+            return *this;
+        }
+
+        InsertModel& reset() {
             _columns.clear();
             _values.clear();
             return *this;
@@ -587,7 +600,6 @@ namespace sql {
 
     protected:
         bool _replace = false;
-        std::string _table_name;
         std::vector<std::string> _columns;
         std::vector<std::string> _values;
     };
@@ -665,8 +677,6 @@ namespace sql {
 
     protected:
         std::vector<std::string> _set_columns;
-        std::string _table_name;
-        std::vector<std::string> _where_condition;
     };
 
     template <>
@@ -737,9 +747,6 @@ namespace sql {
             return out;
         }
 
-    protected:
-        std::string _table_name;
-        std::vector<std::string> _where_condition;
     };
 
 }
