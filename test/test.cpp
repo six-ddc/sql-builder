@@ -22,6 +22,7 @@ using namespace sql;
 
 int main()
 {
+    std::string example{""};
     // Insert
     InsertModel i;
     i.insert("score", 100)
@@ -30,24 +31,24 @@ int main()
             ("address", "beijing")
             ("create_time", nullptr)
         .into("user");
-    assert(i.str() ==
-            "insert into user(score, name, age, address, create_time) values(100, 'six', 20, 'beijing', null)");
+    example = "insert into user (score, name, age, address, create_time) values (100, 'six', 20, 'beijing', null)";
+    assert(example.compare(i) == 0);
 
     // Insert with named parameters
     InsertModel iP;
-    Param score = ":score";
-    Param name = ":name";
-    Param age = ":age";
-    Param address = ":address";
-    Param create_time = ":create_time";
+    Param score {":score"};
+    Param name {":name"};
+    Param age {":age"};
+    Param address {":address"};
+    Param create_time {":create_time"};
     iP.insert("score", score)
             ("name", name)
             ("age", age)
             ("address", address)
             ("create_time", create_time)
         .into("user");
-    assert(iP.str() ==
-            "insert into user(score, name, age, address, create_time) values(:score, :name, :age, :address, :create_time)");
+    example = "insert into user (score, name, age, address, create_time) values (:score, :name, :age, :address, :create_time)";
+    assert(example.compare(iP) == 0);   
 
     // Select
     SelectModel s;
@@ -55,16 +56,16 @@ int main()
         .distinct()
         .from("user")
         .join("score")
-        .on(column("user.id") == column("score.id") and column("score.id") > 60)
-        .where(column("score") > 60 and (column("age") >= 20 or column("address").is_not_null()))
+        .on(column("user.id") == column("score.id") && column("score.id") > 60)
+        .where(column("score") > 60 && (column("age") >= 20 || column("address").is_not_null()))
         // .where(column("score") > 60 && (column("age") >= 20 || column("address").is_not_null()))
         .group_by("age")
         .having(column("age") > 10)
         .order_by("age desc")
         .limit(10)
         .offset(1);
-    assert(s.str() ==
-            "select distinct id as user_id, age, name, address from user join score on (user.id = score.id) and (score.id > 60) where (score > 60) and ((age >= 20) or (address is not null)) group by age having age > 10 order by age desc limit 10 offset 1");
+    example = "select distinct id as user_id, age, name, address from user join score on (user.id = score.id) and (score.id > 60) where (score > 60) and ((age >= 20) or (address is not null)) group by age having age > 10 order by age desc limit 10 offset 1";
+    assert(example.compare(s) == 0);
 
     // Update
     std::vector<int> a = {1, 2, 3};
@@ -75,8 +76,8 @@ int main()
             ("score", nullptr)
             ("address", "beijing")
         .where(column("id").in(a));
-    assert(u.str() ==
-            "update user set name = 'ddc', age = 18, score = null, address = 'beijing' where id in (1, 2, 3)");
+    example = "update user set name = 'ddc', age = 18, score = null, address = 'beijing' where id in (1, 2, 3)";
+    assert(example.compare(u) == 0);
 
     // Update with positional parameters
     UpdateModel uP;
@@ -87,16 +88,16 @@ int main()
             ("score", mark)
             ("address", mark)
         .where(column("id").in(a));
-    assert(uP.str() ==
-            "update user set name = ?, age = ?, score = ?, address = ? where id in (1, 2, 3)");
+    example = "update user set name = ?, age = ?, score = ?, address = ? where id in (1, 2, 3)";
+    assert(example.compare(uP) == 0);
 
     // Delete
     DeleteModel d;
     d._delete()
         .from("user")
         .where(column("id") == 1);
-    assert(d.str() ==
-            "delete from user where id = 1");
+    example = "delete from user where id = 1";
+    assert(example.compare(d) == 0);
 
     return 0;
 }
