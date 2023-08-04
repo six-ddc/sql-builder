@@ -273,7 +273,7 @@ namespace sql {
         template<typename T>
         Model& where(T& condition) {
             _where_condition.push_back(condition);
-            return static_cast<Model*>(this);
+            return *(static_cast<Model*>(this));
         }
         
     private:
