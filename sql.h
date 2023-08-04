@@ -254,7 +254,7 @@ namespace sql {
         return data;
     }
 
-
+    template<typename Model>
     class SqlModel 
     {
     public:
@@ -270,16 +270,22 @@ namespace sql {
             return arg.compare(*this);
         }
         
+        template<typename T>
+        Model& where(T& condition) {
+            _where_condition.push_back(condition);
+            return static_cast<Model*>(this);
+        }
+        
     private:
         SqlModel(const SqlModel& m) = delete;
         SqlModel& operator =(const SqlModel& data) = delete;
     protected:
-        std::string _sql;
-        std::vector<std::string> _where_condition;
-        std::string _table_name;
+        std::string                 _sql;
+        std::vector<std::string>    _where_condition;
+        std::string                 _table_name;
     };
 
-    class SelectModel : public SqlModel
+    class SelectModel : public SqlModel<SelectModel>
     {
     public:
         SelectModel() : _distinct(false) {}
@@ -368,16 +374,6 @@ namespace sql {
 
         SelectModel& on(const column& condition) {
             _join_on_condition.push_back(condition);
-            return *this;
-        }
-
-        SelectModel& where(const std::string& condition) {
-            _where_condition.push_back(condition);
-            return *this;
-        }
-
-        SelectModel& where(const column& condition) {
-            _where_condition.push_back(condition);
             return *this;
         }
 
@@ -505,7 +501,7 @@ namespace sql {
     };
 
 
-    class InsertModel : public SqlModel
+    class InsertModel : public SqlModel<InsertModel>
     {
     public:
         InsertModel() {}
@@ -612,7 +608,7 @@ namespace sql {
     }
 
 
-    class UpdateModel : public SqlModel
+    class UpdateModel : public SqlModel<UpdateModel>
     {
     public:
         UpdateModel() {}
@@ -636,17 +632,6 @@ namespace sql {
         UpdateModel& operator()(const std::string& c, const T& data) {
             return set(c, data);
         }
-
-        UpdateModel& where(const std::string& condition) {
-            _where_condition.push_back(condition);
-            return *this;
-        }
-
-        UpdateModel& where(const column& condition) {
-            _where_condition.push_back(condition);
-            return *this;
-        }
-
         
         operator std::string() {
             if (!_sql.empty())
@@ -676,7 +661,7 @@ namespace sql {
         }
 
     protected:
-        std::vector<std::string> _set_columns;
+        std::vector<std::string> _set_columns;//нужо разделить на _columns и _values как это сделано в InsertModel
     };
 
     template <>
@@ -688,7 +673,7 @@ namespace sql {
     }
 
 
-    class DeleteModel : public SqlModel
+    class DeleteModel : public SqlModel<DeleteModel>
     {
     public:
         DeleteModel() {}
@@ -712,16 +697,6 @@ namespace sql {
         
         // for recursion
         DeleteModel& from() {
-            return *this;
-        }
-
-        DeleteModel& where(const std::string& condition) {
-            _where_condition.push_back(condition);
-            return *this;
-        }
-
-        DeleteModel& where(const column& condition) {
-            _where_condition.push_back(condition);
             return *this;
         }
 
