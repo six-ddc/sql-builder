@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <string>
+#include <map>
 
 using string = std::string;
 
@@ -65,18 +66,6 @@ namespace sql {
     template <>
     inline std::string to_value<column>(const column& data);
 
-    /*
-    template <>
-    static std::string sql::to_value<time_t>(const time_t& data) {
-        char buff[128] = {0};
-        struct tm* ttime = localtime(&data);
-        strftime(buff, sizeof(buff), "%Y-%m-%d %H:%M:%S", ttime);
-        std::string str("'");
-        str.append(buff);
-        str.append("'");
-        return str;
-    }
-    */
 
 //END to_value блок.  ----------------------------------------------------
 
@@ -85,24 +74,12 @@ namespace sql {
         for (auto item : vec)
             result.append(item)
                 .append(sep);
-        result.erase(//erase extra sep
-            std::begin(result) + result.rfind(sep),
-            std::end(result)
-        );
+        if (!vec.empty())
+            result.erase(//erase extra sep
+                std::begin(result) + result.rfind(sep),
+                std::end(result)
+            );
     }
-
-    // template <typename T>
-    // void join_vector(std::string& result, const std::vector<T>& vec, const char* sep) {
-    //     size_t size = vec.size();
-    //     for(size_t i = 0; i < size; ++i) {
-    //         if(i < size - 1) {
-    //             result.append(vec[i]);
-    //             result.append(sep);
-    //         } else {
-    //             result.append(vec[i]);
-    //         }
-    //     }
-    // }
 
     class column
     {
@@ -262,12 +239,15 @@ namespace sql {
         SqlModel(std::string table): _table_name(table) {}
         virtual ~SqlModel() {}
 
-        virtual operator std::string() = 0;
-        const std::string& last_sql() {
-            return _sql;
+        virtual std::string querry()=0;
+        
+        friend std::ostream& operator<< (std::ostream& out, Model& mod) {
+            out<<mod.querry();
+            return out;
         }
+
         virtual bool operator == (std::string arg){
-            return arg.compare(*this);
+            return arg.compare(dynamic_cast<Model*>(this)->querry());
         }
         
         template<typename T>
@@ -283,12 +263,16 @@ namespace sql {
         std::string                 _sql;
         std::vector<std::string>    _where_condition;
         std::string                 _table_name;
+        bool                        _complette{false};
     };
 
     class SelectModel : public SqlModel<SelectModel>
     {
     public:
         SelectModel() : _distinct(false) {}
+        SelectModel(string table_name)
+            : SqlModel(table_name)
+            , _distinct(false){}
         virtual ~SelectModel() {}
 
         template <typename... Args>
@@ -325,54 +309,57 @@ namespace sql {
             return *this;
         }
 
-        SelectModel& join(const std::string& table_name) {
-            _join_type = "join";
-            _join_table = table_name;
+        template<typename T>
+        SelectModel& join(const T& table_name) {
+            _select_specs.insert({"_join_type", "join"});
+            _select_specs.insert({"_join_table", table_name});
             return *this;
         }
 
-        SelectModel& left_join(const std::string& table_name) {
-            _join_type = "left join";
-            _join_table = table_name;
+        template<typename T>
+        SelectModel& left_join(const T& table_name) {
+            _select_specs.insert({"_join_type", "left join"});
+            _select_specs.insert({"_join_table", table_name});
             return *this;
         }
 
-        SelectModel& left_outer_join(const std::string& table_name) {
-            _join_type = "left outer join";
-            _join_table = table_name;
+        template<typename T>
+        SelectModel& left_outer_join(const T& table_name) {
+            _select_specs.insert({"_join_type", "left outer join"});
+            _select_specs.insert({"_join_table", table_name});
             return *this;
         }
 
-        SelectModel& right_join(const std::string& table_name) {
-            _join_type = "right join";
-            _join_table = table_name;
+        template<typename T>
+        SelectModel& right_join(const T& table_name) {
+            _select_specs.insert({"_join_type", "right join"});
+            _select_specs.insert({"_join_table", table_name});
             return *this;
         }
 
-        SelectModel& right_outer_join(const std::string& table_name) {
-            _join_type = "right outer join";
-            _join_table = table_name;
+        template<typename T>
+        SelectModel& right_outer_join(const T& table_name) {
+            _select_specs.insert({"_join_type", "right outer join"});
+            _select_specs.insert({"_join_table", table_name});
             return *this;
         }
 
-        SelectModel& full_join(const std::string& table_name) {
-            _join_type = "full join";
-            _join_table = table_name;
+        template<typename T>
+        SelectModel& full_join(const T& table_name) {
+            _select_specs.insert({"_join_type", "full join"});
+            _select_specs.insert({"_join_table", table_name});
             return *this;
         }
 
-        SelectModel& full_outer_join(const std::string& table_name) {
-            _join_type = "full outer join";
-            _join_table = table_name;
+        template<typename T>
+        SelectModel& full_outer_join(const T& table_name) {
+            _select_specs.insert({"_join_type", "full outer join"});
+            _select_specs.insert({"_join_table", table_name});
             return *this;
         }
 
-        SelectModel& on(const std::string& condition) {
-            _join_on_condition.push_back(condition);
-            return *this;
-        }
-
-        SelectModel& on(const column& condition) {
+        template<typename T>
+        SelectModel& on(const T& condition) {
             _join_on_condition.push_back(condition);
             return *this;
         }
@@ -400,42 +387,41 @@ namespace sql {
         }
 
         SelectModel& order_by(const std::string& order_by) {
-            _order_by = order_by;
+            _select_specs.insert({"_order_by", order_by});
             return *this;
         }
 
         template <typename T>
         SelectModel& limit(const T& limit) {
-            _limit = std::to_string(limit);
+            _select_specs.insert({"_limit", std::to_string(limit)});
             return *this;
         }
         template <typename T>
         SelectModel& limit(const T& offset, const T& limit) {
-            _offset = std::to_string(offset);
-            _limit = std::to_string(limit);
+            _select_specs.insert({"_offset", std::to_string(offset)});
+            _select_specs.insert({"_limit", std::to_string(limit)});
             return *this;
         }
         template <typename T>
         SelectModel& offset(const T& offset) {
-            _offset = std::to_string(offset);
+            _select_specs.insert({"_offset", std::to_string(offset)});
             return *this;
         }
 
-        operator std::string() {
+        std::string querry() {
             _sql.clear();
             _sql.append("select ");
-            if(_distinct) {
+            if(_distinct)
                 _sql.append("distinct ");
-            }
             join_vector(_sql, _select_columns, ", ");
             _sql.append(" from ");
             _sql.append(_table_name);
-            if(!_join_type.empty()) {
-                _sql.append(" ");
-                _sql.append(_join_type);
-                _sql.append(" ");
-                _sql.append(_join_table);
-            }
+            if(_select_specs.contains("_join_type")
+                && _select_specs.contains("_join_table"))
+                _sql.append(" ")
+                    .append(_select_specs.at("_join_type"))
+                    .append(" ")
+                    .append(_select_specs.at("_join_table"));
             if(!_join_on_condition.empty()) {
                 _sql.append(" on ");
                 join_vector(_sql, _join_on_condition, " and ");
@@ -452,52 +438,36 @@ namespace sql {
                 _sql.append(" having ");
                 join_vector(_sql, _having_condition, " and ");
             }
-            if(!_order_by.empty()) {
-                _sql.append(" order by ");
-                _sql.append(_order_by);
-            }
-            if(!_limit.empty()) {
-                _sql.append(" limit ");
-                _sql.append(_limit);
-            }
-            if(!_offset.empty()) {
-                _sql.append(" offset ");
-                _sql.append(_offset);
-            }
+            if(_select_specs.contains("_order_by"))
+                _sql.append(" order by ")
+                    .append(_select_specs.at("_order_by"));
+            if(_select_specs.contains("_limit"))
+                _sql.append(" limit ")
+                    .append(_select_specs.at("_limit"));
+            if(_select_specs.contains("_offset"))
+                _sql.append(" offset ")
+                    .append(_select_specs.at("_offset"));
             return _sql;
         }
 
-        SelectModel& reset() {
+        SelectModel& clear() {
             _select_columns.clear();
             _distinct = false;
             _groupby_columns.clear();
             _table_name.clear();
-            _join_type.clear();
-            _join_table.clear();
             _join_on_condition.clear();
             _where_condition.clear();
             _having_condition.clear();
-            _order_by.clear();
-            _limit.clear();
-            _offset.clear();
             return *this;
         }
-        friend inline std::ostream& operator<< (std::ostream& out, SelectModel& mod) {
-            out<<mod;
-            return out;
-        }
 
-    protected:
+    private:
         std::vector<std::string> _select_columns;
-        bool _distinct;
         std::vector<std::string> _groupby_columns;
-        std::string _join_type;
-        std::string _join_table;
         std::vector<std::string> _join_on_condition;
         std::vector<std::string> _having_condition;
-        std::string _order_by;
-        std::string _limit;
-        std::string _offset;
+        std::map<std::string, std::string> _select_specs;
+        bool _distinct;
     };
 
 
@@ -560,7 +530,7 @@ namespace sql {
             return result;
         }
 
-        operator std::string() {
+        std::string querry() {
             if (!_sql.empty())
                 _sql.clear();
             if (!_values.empty() //not empty values
@@ -587,11 +557,6 @@ namespace sql {
             _columns.clear();
             _values.clear();
             return *this;
-        }
-
-        friend inline std::ostream& operator<< (std::ostream& out, InsertModel& mod) {
-            out<<mod;
-            return out;
         }
 
     protected:
@@ -633,7 +598,7 @@ namespace sql {
             return set(c, data);
         }
         
-        operator std::string() {
+        std::string querry() {
             if (!_sql.empty())
                 _sql.clear();
                 
@@ -654,10 +619,6 @@ namespace sql {
             _set_columns.clear();
             _where_condition.clear();
             return *this;
-        }
-        friend inline std::ostream& operator<< (std::ostream& out, UpdateModel& mod) {
-            out<<mod;
-            return out;
         }
 
     protected:
@@ -700,7 +661,7 @@ namespace sql {
             return *this;
         }
 
-        virtual operator std::string() {
+        std::string querry() {
             _sql.clear();
             _sql.append("delete from ");
             _sql.append(_table_name);
@@ -716,10 +677,6 @@ namespace sql {
             _table_name.clear();
             _where_condition.clear();
             return *this;
-        }
-        friend inline std::ostream& operator<< (std::ostream& out, DeleteModel& mod) {
-            out<<mod;
-            return out;
         }
 
     };

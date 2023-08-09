@@ -32,7 +32,7 @@ int main()
             ("create_time", nullptr)
         .into("user");
     example = "insert into user (score, name, age, address, create_time) values (100, 'six', 20, 'beijing', null)";
-    assert(example.compare(i) == 0);
+    assert(example.compare(i.querry()) == 0);
 
     // Insert with named parameters
     InsertModel iP;
@@ -48,7 +48,7 @@ int main()
             ("create_time", create_time)
         .into("user");
     example = "insert into user (score, name, age, address, create_time) values (:score, :name, :age, :address, :create_time)";
-    assert(example.compare(iP) == 0);   
+    assert(example.compare(iP.querry()) == 0);   
 
     // Select
     SelectModel s;
@@ -65,7 +65,7 @@ int main()
         .limit(10)
         .offset(1);
     example = "select distinct id as user_id, age, name, address from user join score on (user.id = score.id) and (score.id > 60) where (score > 60) and ((age >= 20) or (address is not null)) group by age having age > 10 order by age desc limit 10 offset 1";
-    assert(example.compare(s) == 0);
+    assert(example.compare(s.querry()) == 0);
 
     // Update
     std::vector<int> a = {1, 2, 3};
@@ -77,7 +77,7 @@ int main()
             ("address", "beijing")
         .where(column("id").in(a));
     example = "update user set name = 'ddc', age = 18, score = null, address = 'beijing' where id in (1, 2, 3)";
-    assert(example.compare(u) == 0);
+    assert(example.compare(u.querry()) == 0);
 
     // Update with positional parameters
     UpdateModel uP;
@@ -89,7 +89,7 @@ int main()
             ("address", mark)
         .where(column("id").in(a));
     example = "update user set name = ?, age = ?, score = ?, address = ? where id in (1, 2, 3)";
-    assert(example.compare(uP) == 0);
+    assert(example.compare(uP.querry()) == 0);
 
     // Delete
     DeleteModel d;
@@ -97,7 +97,7 @@ int main()
         .from("user")
         .where(column("id") == 1);
     example = "delete from user where id = 1";
-    assert(example.compare(d) == 0);
+    assert(example.compare(d.querry()) == 0);
 
     return 0;
 }

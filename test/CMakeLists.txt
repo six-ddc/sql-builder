@@ -4,8 +4,9 @@ set(CMAKE_MACOSX_RPATH 0)
 
 project(sql-builder)
 
-set(DEBUG_FLAGS "-std=c++11 -g -O1 -Wall -Wextra -pedantic")
-set(RELEASE_FLAGS "-std=c++11 -O3 -Wall -Wextra -pedantic")
+set(CMAKE_CXX_STANDARD 23)
+set(DEBUG_FLAGS "-std=c++23 -g -O1 -Wall -Wextra -pedantic")
+set(RELEASE_FLAGS "-std=c++23 -O3 -Wall -Wextra -pedantic")
 
 set(CMAKE_CXX_FLAGS ${RELEASE_FLAGS})
 set(CMAKE_CXX_FLAGS_DEBUG ${DEBUG_FLAGS})
