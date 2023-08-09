@@ -1,7 +1,0 @@
-test/build
-*.so
-test.dSYM
-.DS_Store
-a.out
-.gitignore
-main.cpp
